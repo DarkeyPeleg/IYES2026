@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from "react-router-dom";
 import Registration from "./pages/Registration";
 import CheckIn from "./pages/CheckIn";
-import AdminDashboard from "./pages/AdminDashboard"; // Updated to match your filename
+import AdminDashboard from "./pages/AdminDashboard";
 import EventCreation from "./pages/EventCreation";
 
 // Modern NavLink with "Active" state highlights
@@ -59,7 +59,6 @@ function App() {
             <Routes>
               <Route path="/register" element={<Registration />} />
               <Route path="/checkin" element={<CheckIn />} />
-              {/* Note: I kept your path as /organizer/dashboard, but it now points to AdminDashboard */}
               <Route path="/organizer/dashboard" element={<AdminDashboard />} />
               <Route path="/organizer/create-event" element={<EventCreation />} />
               <Route path="*" element={<Registration />} />

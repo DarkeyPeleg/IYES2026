@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import AttendeeForm from '../components/AttendeeForm';
-import GroupForm from '../components/GroupForm'; // We will create this next
+import GroupForm from '../components/GroupForm';
 
 const Registration = () => {
   const [regType, setRegType] = useState('individual'); // 'individual' or 'group'
