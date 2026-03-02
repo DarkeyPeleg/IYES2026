@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { DataService } from '../services/DataService';
 
-const AttendeeForm = () => {
+const AttendeeForm = ({ config }) => {
   const [formData, setFormData] = useState({
     name: '', phone: '', email: '', gender: '', location: ''
   });
@@ -12,20 +12,25 @@ const AttendeeForm = () => {
     const result = DataService.register(formData);
     
     if (result.success) {
-      setStatus({ message: 'Registration Successful!', type: 'success' });
+      // Logic: Use the Custom Success Message from Setup Console, fallback to default if empty
+      setStatus({ 
+        message: config?.successMsg || 'Registration Successful!', 
+        type: 'success' 
+      });
       setFormData({ name: '', phone: '', email: '', gender: '', location: '' });
     } else {
       setStatus({ message: result.message, type: 'error' });
     }
   };
 
-  const inputCls = "w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-base";
+  const inputCls = "w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-600 focus:bg-white outline-none transition-all text-base";
+  const labelCls = "block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Full Name */}
+      {/* Full Name - Always Required */}
       <div>
-        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Full Name</label>
+        <label className={labelCls}>Full Name</label>
         <input
           placeholder="Enter full name"
           className={inputCls}
@@ -35,10 +40,10 @@ const AttendeeForm = () => {
         />
       </div>
 
-      {/* Responsive Row 1: Phone & Email */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Row: Phone (Always) & Email (Conditional) */}
+      <div className={`grid grid-cols-1 ${config?.fields?.email ? 'md:grid-cols-2' : ''} gap-4`}>
         <div>
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Phone</label>
+          <label className={labelCls}>Phone</label>
           <input
             type="tel"
             placeholder="050 000 0000"
@@ -48,51 +53,64 @@ const AttendeeForm = () => {
             required
           />
         </div>
-        <div>
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Email</label>
-          <input
-            type="email"
-            placeholder="email@example.com"
-            className={inputCls}
-            value={formData.email}
-            onChange={(e) => setFormData({...formData, email: e.target.value})}
-          />
-        </div>
+        
+        {/* Logic: Only show Email if enabled in Setup Console */}
+        {config?.fields?.email && (
+          <div>
+            <label className={labelCls}>Email</label>
+            <input
+              type="email"
+              placeholder="email@example.com"
+              className={inputCls}
+              value={formData.email}
+              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              required
+            />
+          </div>
+        )}
       </div>
 
-      {/* Responsive Row 2: Gender & Location */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Gender</label>
-          <select 
-            className={inputCls}
-            value={formData.gender}
-            onChange={(e) => setFormData({...formData, gender: e.target.value})}
-            required
-          >
-            <option value="">Select</option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Location</label>
-          <input
-            placeholder="City"
-            className={inputCls}
-            value={formData.location}
-            onChange={(e) => setFormData({...formData, location: e.target.value})}
-            required
-          />
-        </div>
+      {/* Row: Gender & Location (Both Conditional) */}
+      <div className={`grid grid-cols-1 ${(config?.fields?.gender && config?.fields?.location) ? 'md:grid-cols-2' : ''} gap-4`}>
+        
+        {/* Logic: Only show Gender if enabled */}
+        {config?.fields?.gender && (
+          <div>
+            <label className={labelCls}>Gender</label>
+            <select 
+              className={inputCls}
+              value={formData.gender}
+              onChange={(e) => setFormData({...formData, gender: e.target.value})}
+              required
+            >
+              <option value="">Select</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
+        )}
+
+        {/* Logic: Only show Location if enabled */}
+        {config?.fields?.location && (
+          <div>
+            <label className={labelCls}>Location</label>
+            <input
+              placeholder="City"
+              className={inputCls}
+              value={formData.location}
+              onChange={(e) => setFormData({...formData, location: e.target.value})}
+              required
+            />
+          </div>
+        )}
       </div>
 
-      <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-5 rounded-2xl shadow-lg transition-all active:scale-[0.98] mt-4">
+      <button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-5 rounded-2xl shadow-lg transition-all active:scale-[0.98] mt-4">
         Register Now
       </button>
 
       {status.message && (
-        <div className={`p-4 rounded-xl text-center font-bold text-sm ${
+        <div className={`p-4 rounded-xl text-center font-bold text-sm animate-in fade-in duration-300 ${
           status.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
         }`}>
           {status.message}

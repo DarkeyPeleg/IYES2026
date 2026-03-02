@@ -1,11 +1,13 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from "react-router-dom";
+import { DataService } from './services/DataService'; 
 import Registration from "./pages/Registration";
 import CheckIn from "./pages/CheckIn";
 import AdminDashboard from "./pages/AdminDashboard";
 import EventCreation from "./pages/EventCreation";
+import Auth from './pages/Auth';
+import Settings from './pages/Settings'; 
 
-// Modern NavLink with "Active" state highlights
 const NavItem = ({ to, children }) => {
   const location = useLocation();
   const isActive = location.pathname === to;
@@ -24,31 +26,61 @@ const NavItem = ({ to, children }) => {
 };
 
 function App() {
+  // Always fetch the admin profile
+  const admin = DataService.getUserProfile();
+
   return (
     <Router>
       <div className="min-h-screen bg-slate-50 flex flex-col">
         
-        {/* Professional Header */}
         <nav className="sticky top-0 z-50 bg-indigo-600 border-b border-indigo-500 shadow-xl px-6 py-4">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             
-            {/* Branding */}
-            <div className="flex items-center gap-3">
+            {/* 1. Branding */}
+            <Link to="/" className="flex items-center gap-3">
               <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-inner">
                 <div className="w-5 h-5 bg-indigo-600 rounded-md"></div>
               </div>
               <span className="text-white font-black tracking-tighter text-2xl">
                 IYES<span className="text-indigo-200"> 2026</span>
               </span>
-            </div>
+            </Link>
 
-            {/* Navigation Controls */}
-            <div className="flex items-center gap-2 bg-indigo-700/40 p-1.5 rounded-2xl border border-indigo-400/20">
-              <NavItem to="/register">Register</NavItem>
-              <NavItem to="/checkin">Check-In</NavItem>
-              <div className="w-[1px] h-6 bg-indigo-400/40 mx-1 hidden md:block" />
-              <NavItem to="/organizer/dashboard">Dashboard</NavItem>
-              <NavItem to="/organizer/create-event">Setup</NavItem>
+            {/* 2. Navigation & Profile Controls */}
+            <div className="flex items-center gap-4">
+              
+              {/* Management Links (Always Visible) */}
+              <div className="flex items-center gap-2 bg-indigo-700/40 p-1.5 rounded-2xl border border-indigo-400/20">
+                <NavItem to="/register">Register</NavItem>
+                <NavItem to="/checkin">Check-In</NavItem>
+                <div className="w-[1px] h-6 bg-indigo-400/40 mx-1 hidden md:block" />
+                <NavItem to="/organizer/dashboard">Dashboard</NavItem>
+                <NavItem to="/organizer/create-event">Setup</NavItem>
+              </div>
+
+              {/* 3. Profile Tab (Always Visible) */}
+              <div className="flex items-center gap-2 pl-2 border-l border-indigo-400/30">
+                <Link to="/settings" className="flex items-center gap-3 group">
+                  <div className="text-right hidden sm:block">
+                    <p className="text-[10px] text-indigo-200 font-black uppercase tracking-widest leading-none">Organizer</p>
+                    <p className="text-sm text-white font-bold">{admin.name || 'Admin'}</p>
+                  </div>
+                  
+                  {/* Avatar Display */}
+                  <div className="w-10 h-10 rounded-full bg-indigo-400 border-2 border-indigo-300 flex items-center justify-center text-white font-black shadow-md group-hover:scale-105 transition-transform overflow-hidden">
+                    {admin.avatar ? (
+                      <img src={admin.avatar} className="w-full h-full object-cover" alt="Profile" />
+                    ) : (
+                      (admin.name || 'A').charAt(0)
+                    )}
+                  </div>
+                </Link>
+                
+                {/* Subtle Login Link for testing purposes */}
+                <Link to="/login" className="ml-2 text-indigo-300 hover:text-white text-[10px] font-black uppercase tracking-tighter">
+                  Auth
+                </Link>
+              </div>
             </div>
           </div>
         </nav>
@@ -61,6 +93,8 @@ function App() {
               <Route path="/checkin" element={<CheckIn />} />
               <Route path="/organizer/dashboard" element={<AdminDashboard />} />
               <Route path="/organizer/create-event" element={<EventCreation />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/login" element={<Auth />} />
               <Route path="*" element={<Registration />} />
             </Routes>
           </div>

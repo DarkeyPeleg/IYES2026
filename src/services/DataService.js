@@ -25,7 +25,7 @@ export const DataService = {
     };
   },
 
-  // 2. Logic for Registration.js (Individual)
+  // 2. Individual Registration
   register: (newAttendee) => {
     const attendees = getAttendees();
     const exists = attendees.find(a => a.phone === newAttendee.phone);
@@ -42,7 +42,7 @@ export const DataService = {
     return { success: true, data: attendeeRecord };
   },
 
-  // 3. Logic for Registration.js (Group/Institution)
+  // 3. Group/Institution Registration
   registerGroup: (groupData) => {
     const attendees = getAttendees();
     const groupRecord = {
@@ -56,7 +56,7 @@ export const DataService = {
     return { success: true, data: groupRecord };
   },
 
-  // 4. Logic for CheckIn.js
+  // 4. Check-In Logic
   checkIn: (phone) => {
     const attendees = getAttendees();
     const index = attendees.findIndex(a => a.phone === phone);
@@ -67,17 +67,95 @@ export const DataService = {
     return { success: true, data: attendees[index] };
   },
 
-  getStats: () => {
-    return DataService.getAll();
-  },
+  getStats: () => DataService.getAll(),
 
-  // 5. Logic for Setup
+  // 5. Setup & Event Configuration (CRASH-PROOF VERSION)
   saveConfig: (config) => {
     localStorage.setItem('event_config', JSON.stringify(config));
   },
 
   getConfig: () => {
     const cfg = localStorage.getItem('event_config');
-    return cfg ? JSON.parse(cfg) : { name: 'New Event', pin: '0000', capacity: 100, location: '' };
-  }
+    const defaultFields = { email: true, gender: true, location: true };
+    
+    if (!cfg) {
+      return { 
+        name: 'IYES 2026', 
+        location: '', 
+        dateTime: '', 
+        description: '',
+        allowGroups: true,
+        pin: '0000',
+        fields: defaultFields,
+        successMsg: 'Registration Successful!'
+      };
+    }
+
+    const parsed = JSON.parse(cfg);
+
+    // DEFENSIVE RETURN: Merges old data with new structure to prevent "undefined" errors
+    return {
+      name: parsed.name || 'IYES 2026',
+      location: parsed.location || '',
+      dateTime: parsed.dateTime || '',
+      description: parsed.description || '',
+      allowGroups: parsed.allowGroups ?? true,
+      pin: parsed.pin || '0000',
+      successMsg: parsed.successMsg || 'Registration Successful!',
+      fields: parsed.fields || defaultFields // This prevents the crash
+    };
+  },
+
+  // 6. User Profile Logic
+  saveUserProfile: (profile) => {
+    localStorage.setItem('admin_profile', JSON.stringify(profile));
+  },
+
+  getUserProfile: () => {
+    const profile = localStorage.getItem('admin_profile');
+    return profile ? JSON.parse(profile) : { 
+      name: 'Admin User', 
+      email: 'admin@eventpro.com', 
+      avatar: null,
+      role: 'Event Organizer'
+    };
+  },
+
+  // 7. Security Updates
+  updatePassword: (newPassword) => {
+    const profile = DataService.getUserProfile();
+    profile.password = newPassword; 
+    DataService.saveUserProfile(profile);
+    return { success: true };
+  },
+
+  updateEventPin: (newPin) => {
+    const config = DataService.getConfig();
+    config.pin = newPin;
+    DataService.saveConfig(config);
+    return { success: true };
+  },
+
+getConfig: () => {
+  const cfg = localStorage.getItem('event_config');
+  const defaultFields = { email: true, gender: true, location: true };
+  
+  const baseDefaults = { 
+    name: 'IYES 2026', 
+    location: '', 
+    dateTime: '', 
+    description: '',
+    regMode: 'event', // 'pre-registration' or 'event registration'
+    linkExpiry: '', 
+    flyer: null,
+    allowGroups: true,
+    pin: '0000',
+    fields: defaultFields,
+    successMsg: 'Registration Successful!'
+  };
+
+  if (!cfg) return baseDefaults;
+  const parsed = JSON.parse(cfg);
+  return { ...baseDefaults, ...parsed }; // Merges existing data with new keys
+},
 };
