@@ -6,7 +6,6 @@ const AdminDashboard = () => {
   const [config] = useState(DataService.getConfig());
   const [filter, setFilter] = useState('');
 
-  // Auto-refresh stats
   useEffect(() => {
     const interval = setInterval(() => {
       setStats(DataService.getStats());
@@ -14,155 +13,152 @@ const AdminDashboard = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const filteredAttendees = stats.attendees.filter(a => 
-    a.name.toLowerCase().includes(filter.toLowerCase()) || 
-    a.phone.includes(filter)
-  );
+  const dynamicColumns = config.customFields || [];
+  
+  const filteredAttendees = stats.attendees.filter(a => {
+    const searchTerm = filter.toLowerCase();
+    return Object.values(a).some(val => String(val).toLowerCase().includes(searchTerm));
+  });
 
-  const checkInRate = stats.total > 0 ? Math.round((stats.checkedIn / stats.total) * 100) : 0;
-  const capacityRate = config.capacity > 0 ? Math.round((stats.total / config.capacity) * 100) : 0;
+  // Export Logic: Converts dynamic data into a downloadable CSV file
+  const exportToCSV = () => {
+    if (stats.attendees.length === 0) return alert("No data to export");
+
+    const headers = ["Type", ...dynamicColumns.map(c => c.label), "Status", "Time"];
+    const rows = stats.attendees.map(a => [
+      a.isGroup ? "ORG" : "IND",
+      ...dynamicColumns.map(c => a[c.label] || ""),
+      a.hasCheckedIn ? "Checked In" : "Registered",
+      new Date(a.registeredAt).toLocaleString()
+    ]);
+
+    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${config.name}_Attendance.csv`;
+    link.click();
+  };
 
   return (
-    <div className="max-w-7xl mx-auto py-10 px-4 space-y-8 animate-in fade-in duration-500">
+    <div className="max-w-7xl mx-auto py-10 px-4 space-y-10 animate-in fade-in duration-500">
       
-      {/* 1. Header & Quick Actions */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      {/* 1. HEADER SECTION */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tight">{config.name}</h1>
-          <p className="text-slate-500 font-medium">Live Event Analytics & Management</p>
+          <h1 className="text-5xl font-black text-slate-900 tracking-tighter italic">
+            {config.name} <span className="text-indigo-600">.</span>
+          </h1>
+          <p className="text-slate-400 font-black uppercase tracking-[0.3em] text-[10px] mt-2">
+            Command & Control Terminal
+          </p>
         </div>
-        <div className="flex gap-2">
-          <button onClick={() => window.print()} className="bg-white border border-slate-200 px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all">Export Report</button>
-          <button onClick={() => window.location.reload()} className="bg-indigo-600 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-lg shadow-indigo-200">Refresh Data</button>
+        <div className="flex gap-3">
+          <button 
+            onClick={exportToCSV}
+            className="bg-white border-2 border-slate-100 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all shadow-sm"
+          >
+            Export CSV
+          </button>
+          <input 
+            type="text" 
+            placeholder="Search records..." 
+            className="bg-white border-2 border-slate-100 rounded-2xl px-6 py-3 text-sm font-bold outline-none focus:border-indigo-600 w-64 shadow-xl shadow-slate-200/50"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+          />
         </div>
       </div>
 
-      {/* 2. Top Level Metrics */}
+      {/* 2. ANALYTICS CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Total Registered" value={stats.total} icon="👥" color="indigo" />
-        <StatCard title="Checked In" value={stats.checkedIn} icon="✅" color="emerald" />
-        <StatCard title="Arrival Rate" value={`${checkInRate}%`} icon="📈" color="blue" />
-        <StatCard title="Capacity Used" value={`${capacityRate}%`} icon="🏢" color="amber" />
+        <StatCard title="Total Registrations" value={stats.total} icon="👥" color="indigo" />
+        <StatCard title="Successful Check-ins" value={stats.checkedIn} icon="🏁" color="emerald" />
+        <StatCard title="Remaining Guests" value={stats.total - stats.checkedIn} icon="⏳" color="amber" />
+        <StatCard 
+          title="Arrival Rate" 
+          value={stats.total > 0 ? `${Math.round((stats.checkedIn / stats.total) * 100)}%` : '0%'} 
+          icon="📊" 
+          color="rose" 
+        />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* 3. Attendee List (2/3 Width) */}
-        <div className="lg:col-span-2 bg-white rounded-[2.5rem] shadow-xl border border-slate-100 overflow-hidden">
-          <div className="p-8 border-b border-slate-50 flex justify-between items-center">
-            <h2 className="text-xl font-black text-slate-800">Recent Registrations</h2>
-            <input 
-              type="text" 
-              placeholder="Search by name or phone..." 
-              className="bg-slate-50 border border-slate-100 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-600 w-64"
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-            />
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50/50">
-                  <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest pl-8">Attendee</th>
-                  <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Type</th>
-                  <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                  <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
+      {/* 3. DYNAMIC DATA TABLE */}
+      <div className="bg-white rounded-[3rem] shadow-2xl shadow-slate-200/60 border border-slate-100 overflow-hidden">
+        <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/30">
+           <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Live Attendance Feed</h3>
+           <span className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50/50">
+                <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest pl-12">Category</th>
+                {dynamicColumns.map(col => (
+                  <th key={col.id} className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">{col.label}</th>
+                ))}
+                <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest pr-12 text-right">Registered</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {filteredAttendees.length > 0 ? filteredAttendees.map((person, i) => (
+                <tr key={i} className="hover:bg-indigo-50/30 transition-colors group">
+                  <td className="p-6 pl-12">
+                    <span className={`text-[9px] font-black px-3 py-1.5 rounded-xl ${person.isGroup ? 'bg-amber-100 text-amber-700' : 'bg-indigo-600 text-white shadow-md shadow-indigo-200'}`}>
+                      {person.isGroup ? 'ORG' : 'IND'}
+                    </span>
+                  </td>
+                  {dynamicColumns.map(col => (
+                    <td key={col.id} className="p-6 text-sm font-bold text-slate-700">{person[col.label] || '—'}</td>
+                  ))}
+                  <td className="p-6">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2.5 h-2.5 rounded-full ${person.hasCheckedIn ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)]' : 'bg-slate-200'}`}></div>
+                      <span className="text-[10px] font-black uppercase text-slate-400">{person.hasCheckedIn ? 'Verified' : 'Pending'}</span>
+                    </div>
+                  </td>
+                  <td className="p-6 text-right pr-12 text-[10px] font-bold text-slate-400 uppercase">
+                    {new Date(person.registeredAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {filteredAttendees.length > 0 ? filteredAttendees.slice(0, 10).map((person, i) => (
-                  <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="p-4 pl-8">
-                      <p className="font-bold text-slate-900">{person.name}</p>
-                      <p className="text-xs text-slate-500">{person.phone}</p>
-                    </td>
-                    <td className="p-4">
-                      <span className={`text-[10px] font-black px-2 py-1 rounded-md uppercase ${person.isGroup ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700'}`}>
-                        {person.isGroup ? 'Group' : 'Individual'}
-                      </span>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${person.hasCheckedIn ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
-                        <span className="text-xs font-bold text-slate-600">{person.hasCheckedIn ? 'Present' : 'Absent'}</span>
-                      </div>
-                    </td>
-                    <td className="p-4 text-xs font-medium text-slate-400">
-                      {new Date(person.registeredAt).toLocaleDateString()}
-                    </td>
-                  </tr>
-                )) : (
-                  <tr><td colSpan="4" className="p-10 text-center text-slate-400 font-medium italic">No attendees found.</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+              )) : (
+                <tr>
+                  <td colSpan={dynamicColumns.length + 3} className="p-24 text-center">
+                    <div className="text-slate-300 mb-2 text-4xl">📂</div>
+                    <p className="text-slate-400 font-bold italic text-sm">Waiting for incoming registration data...</p>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
-
-        {/* 4. Event Health (1/3 Width) */}
-        <div className="space-y-6">
-          <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden">
-            <div className="relative z-10">
-              <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-6">Event Snapshot</h3>
-              <div className="space-y-6">
-                <div>
-                  <div className="flex justify-between text-xs font-bold mb-2">
-                    <span>Venue Capacity</span>
-                    <span>{stats.total} / {config.capacity}</span>
-                  </div>
-                  <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full bg-indigo-500 transition-all duration-1000" style={{ width: `${capacityRate}%` }}></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-xs font-bold mb-2">
-                    <span>Check-in Progress</span>
-                    <span>{stats.checkedIn} / {stats.total}</span>
-                  </div>
-                  <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full bg-emerald-500 transition-all duration-1000" style={{ width: `${checkInRate}%` }}></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            {/* Background decorative element */}
-            <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-indigo-600/20 rounded-full blur-3xl"></div>
-          </div>
-
-          <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-xl">
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Quick Links</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <QuickLink to="/register" label="Registration Page" icon="🔗" />
-              <QuickLink to="/checkin" label="Gate Terminal" icon="🚪" />
-              <QuickLink to="/organizer/create-event" label="Edit Setup" icon="⚙️" />
-              <QuickLink to="/settings" label="Admin Profile" icon="👤" />
-            </div>
-          </div>
-        </div>
-
       </div>
     </div>
   );
 };
 
-// Sub-components for cleaner code
-const StatCard = ({ title, value, icon, color }) => (
-  <div className="bg-white p-6 rounded-3xl shadow-xl border border-slate-100 flex items-center gap-5">
-    <div className={`w-14 h-14 rounded-2xl bg-${color}-50 flex items-center justify-center text-2xl shadow-inner`}>
-      {icon}
-    </div>
-    <div>
-      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{title}</p>
-      <p className="text-2xl font-black text-slate-900">{value}</p>
-    </div>
-  </div>
-);
+// COMPONENT: STAT CARD
+const StatCard = ({ title, value, icon, color }) => {
+  const colors = {
+    indigo: "bg-indigo-50 text-indigo-600 border-indigo-100",
+    emerald: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    amber: "bg-amber-50 text-amber-600 border-amber-100",
+    rose: "bg-rose-50 text-rose-600 border-rose-100"
+  };
 
-const QuickLink = ({ to, label, icon }) => (
-  <a href={to} className="flex flex-col items-center p-4 bg-slate-50 rounded-2xl hover:bg-indigo-50 hover:text-indigo-600 transition-all border border-transparent hover:border-indigo-100">
-    <span className="text-xl mb-1">{icon}</span>
-    <span className="text-[10px] font-black uppercase text-center">{label}</span>
-  </a>
-);
+  return (
+    <div className={`p-8 rounded-[2.5rem] border-2 bg-white shadow-xl shadow-slate-200/40 flex items-center gap-6 group hover:scale-[1.02] transition-transform`}>
+      <div className={`w-16 h-16 rounded-3xl flex items-center justify-center text-3xl shadow-inner ${colors[color]}`}>
+        {icon}
+      </div>
+      <div>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{title}</p>
+        <p className="text-3xl font-black text-slate-900 tracking-tighter">{value}</p>
+      </div>
+    </div>
+  );
+};
 
 export default AdminDashboard;

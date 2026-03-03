@@ -27,7 +27,7 @@ const Registration = () => {
           <img src={config.flyer} alt="Event" className="absolute inset-0 w-full h-full object-cover opacity-80" />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 to-indigo-900 flex items-center justify-center">
-             <span className="text-white/20 text-9xl font-black select-none">IYES</span>
+            <span className="text-white/20 text-9xl font-black select-none">IYES</span>
           </div>
         )}
         <div className="relative z-10 p-16 flex flex-col justify-end w-full bg-gradient-to-t from-indigo-950/80 to-transparent">
