@@ -35,7 +35,7 @@ export const DataService = {
     const attendeeRecord = {
       ...newAttendee,
       id: Math.random().toString(36).substr(2, 9),
-      hasCheckedIn: true, 
+      hasCheckedIn: false, // Default to false for registration
       registeredAt: new Date().toISOString()
     };
     saveAttendees([...attendees, attendeeRecord]);
@@ -49,7 +49,7 @@ export const DataService = {
       ...groupData,
       id: 'GRP-' + Math.random().toString(36).substr(2, 9),
       isGroup: true,
-      hasCheckedIn: true,
+      hasCheckedIn: false,
       registeredAt: new Date().toISOString()
     };
     saveAttendees([...attendees, groupRecord]);
@@ -69,40 +69,43 @@ export const DataService = {
 
   getStats: () => DataService.getAll(),
 
-  // 5. Setup & Event Configuration (CRASH-PROOF VERSION)
+  // 5. Setup & Event Configuration (DYNAMIC FIELD COMPATIBLE)
   saveConfig: (config) => {
     localStorage.setItem('event_config', JSON.stringify(config));
   },
 
   getConfig: () => {
     const cfg = localStorage.getItem('event_config');
-    const defaultFields = { email: true, gender: true, location: true };
     
-    if (!cfg) {
-      return { 
-        name: 'IYES 2026', 
-        location: '', 
-        dateTime: '', 
-        description: '',
-        allowGroups: true,
-        pin: '0000',
-        fields: defaultFields,
-        successMsg: 'Registration Successful!'
-      };
-    }
+    // Default structure for a professional setup
+    const baseDefaults = { 
+      name: 'IYES 2026', 
+      location: '', 
+      startDate: '', 
+      endDate: '',
+      description: '',
+      capacity: 1000,
+      regMode: { preReg: true, onSite: true },
+      linkExpiry: '', 
+      flyer: null,
+      allowGroups: true,
+      pin: '0000',
+      // This is where your typed fields live!
+      customFields: [
+        { id: '1', label: 'Email Address' },
+        { id: '2', label: 'Location' }
+      ],
+      successMsg: 'Registration Successful!'
+    };
 
+    if (!cfg) return baseDefaults;
+    
     const parsed = JSON.parse(cfg);
-
-    // DEFENSIVE RETURN: Merges old data with new structure to prevent "undefined" errors
-    return {
-      name: parsed.name || 'IYES 2026',
-      location: parsed.location || '',
-      dateTime: parsed.dateTime || '',
-      description: parsed.description || '',
-      allowGroups: parsed.allowGroups ?? true,
-      pin: parsed.pin || '0000',
-      successMsg: parsed.successMsg || 'Registration Successful!',
-      fields: parsed.fields || defaultFields // This prevents the crash
+    // Return saved data but ensure customFields exists to prevent crashes
+    return { 
+      ...baseDefaults, 
+      ...parsed,
+      customFields: parsed.customFields || baseDefaults.customFields 
     };
   },
 
@@ -119,43 +122,5 @@ export const DataService = {
       avatar: null,
       role: 'Event Organizer'
     };
-  },
-
-  // 7. Security Updates
-  updatePassword: (newPassword) => {
-    const profile = DataService.getUserProfile();
-    profile.password = newPassword; 
-    DataService.saveUserProfile(profile);
-    return { success: true };
-  },
-
-  updateEventPin: (newPin) => {
-    const config = DataService.getConfig();
-    config.pin = newPin;
-    DataService.saveConfig(config);
-    return { success: true };
-  },
-
-getConfig: () => {
-  const cfg = localStorage.getItem('event_config');
-  const defaultFields = { email: true, gender: true, location: true };
-  
-  const baseDefaults = { 
-    name: 'IYES 2026', 
-    location: '', 
-    dateTime: '', 
-    description: '',
-    regMode: 'event', // 'pre-registration' or 'event registration'
-    linkExpiry: '', 
-    flyer: null,
-    allowGroups: true,
-    pin: '0000',
-    fields: defaultFields,
-    successMsg: 'Registration Successful!'
-  };
-
-  if (!cfg) return baseDefaults;
-  const parsed = JSON.parse(cfg);
-  return { ...baseDefaults, ...parsed }; // Merges existing data with new keys
-},
+  }
 };
