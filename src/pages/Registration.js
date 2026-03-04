@@ -11,65 +11,101 @@ const Registration = () => {
 
   if (isExpired) {
     return (
-      <div className="max-w-md mx-auto mt-20 p-10 bg-white rounded-[2.5rem] shadow-xl text-center border border-slate-100">
-        <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6 text-3xl">⌛</div>
-        <h2 className="text-2xl font-black text-slate-900">Registration Closed</h2>
-        <p className="text-slate-500 mt-2 font-medium">This event link has expired.</p>
+      <div className="flex items-center justify-center min-h-screen bg-slate-50 p-6">
+        <div className="max-w-md w-full p-10 bg-white rounded-[3rem] shadow-xl text-center border border-slate-100">
+          <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6 text-3xl">⌛</div>
+          <h2 className="text-2xl font-black text-slate-900">Registration Closed</h2>
+          <p className="text-slate-500 mt-2 font-medium">This event is no longer accepting registrations.</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen lg:flex">
-      {/* LEFT COLUMN: Visual & Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-indigo-600 relative overflow-hidden">
+    /* h-screen + overflow-hidden stops the WHOLE page from scrolling */
+    <div className="h-screen overflow-hidden lg:flex bg-white">
+      
+      {/* LEFT COLUMN: Fixed Visuals (50% width on desktop) */}
+      <div className="hidden lg:flex lg:w-1/2 h-full bg-slate-100 items-center justify-center relative border-r border-slate-100">
         {config.flyer ? (
-          <img src={config.flyer} alt="Event" className="absolute inset-0 w-full h-full object-cover opacity-80" />
+          <>
+            <img src={config.flyer} className="absolute inset-0 w-full h-full object-cover blur-3xl opacity-10" alt="bg" />
+            <img 
+              src={config.flyer} 
+              alt="Event Flyer" 
+              className="relative z-10 max-h-[90%] max-w-[90%] shadow-2xl rounded-2xl border-4 border-white object-contain" 
+            />
+          </>
         ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 to-indigo-900 flex items-center justify-center">
-            <span className="text-white/20 text-9xl font-black select-none">IYES</span>
-          </div>
+          <div className="text-slate-200 font-black text-9xl tracking-tighter opacity-20">IYES</div>
         )}
-        <div className="relative z-10 p-16 flex flex-col justify-end w-full bg-gradient-to-t from-indigo-950/80 to-transparent">
-          <h1 className="text-5xl font-black text-white mb-4 leading-tight">{config.name}</h1>
-          <div className="flex items-center gap-4 text-indigo-100 font-bold uppercase tracking-widest text-sm">
-            <span>{config.location}</span>
-            <span className="w-2 h-2 bg-indigo-400 rounded-full"></span>
-            <span>{new Date(config.startDate).toLocaleDateString()}</span>
-          </div>
-        </div>
       </div>
 
-      {/* RIGHT COLUMN: The Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 md:p-12 bg-white">
-        <div className="w-full max-w-xl space-y-8">
-          {/* Mobile Flyer (only shows on small screens) */}
-          <div className="lg:hidden mb-8 rounded-3xl overflow-hidden shadow-lg">
-            <img src={config.flyer} alt="Flyer" className="w-full h-auto" />
-          </div>
-
-          <div className="text-center lg:text-left">
-            <h2 className="text-3xl font-black text-slate-900 mb-2">Join the Event</h2>
-            <p className="text-slate-500 font-medium">{config.description}</p>
-          </div>
-
-          {config.allowGroups && (
-            <div className="flex p-1 bg-slate-100 rounded-2xl w-full max-w-sm">
-              <button 
-                onClick={() => setRegType('individual')}
-                className={`flex-1 py-3 rounded-xl text-xs font-black uppercase transition-all ${regType === 'individual' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}
-              >Individual</button>
-              <button 
-                onClick={() => setRegType('group')}
-                className={`flex-1 py-3 rounded-xl text-xs font-black uppercase transition-all ${regType === 'group' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}
-              >Organization</button>
+      {/* RIGHT COLUMN: The Form Area */}
+      <div className="w-full lg:w-1/2 h-full flex flex-col bg-white">
+        
+        {/* Mobile Flyer (Fixed height on mobile, hidden on desktop) */}
+        {config.flyer && (
+          <div className="lg:hidden h-48 w-full flex-shrink-0 relative overflow-hidden">
+            <img src={config.flyer} alt="Flyer" className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-black/40 flex items-center p-6">
+              <h1 className="text-white text-xl font-black uppercase tracking-tight">{config.name}</h1>
             </div>
-          )}
+          </div>
+        )}
 
-          <div className="animate-in slide-in-from-bottom-4 duration-500">
-            {regType === 'individual' ? <AttendeeForm config={config} /> : <GroupForm config={config} />}
+        {/* SCROLLABLE CONTAINER: Only this part moves */}
+        <div className="flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200">
+          <div className="max-w-xl mx-auto p-8 md:p-16 space-y-10">
+            
+            <div className="space-y-3">
+              <h1 className="hidden lg:block text-4xl font-black text-slate-900 tracking-tighter leading-none">
+                {config.name}
+              </h1>
+              <div className="flex flex-wrap gap-2">
+                <span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-black uppercase tracking-widest">
+                  {config.location || 'Venue TBA'}
+                </span>
+                {config.startDate && (
+                  <span className="px-3 py-1 bg-slate-50 text-slate-500 rounded-lg text-[10px] font-black uppercase tracking-widest">
+                    {new Date(config.startDate).toLocaleDateString()}
+                  </span>
+                )}
+              </div>
+              <p className="text-slate-500 font-medium leading-relaxed text-sm">
+                {config.description}
+              </p>
+            </div>
+
+            {/* Registration Type Switcher */}
+            {config.allowGroups && (
+              <div className="flex p-1.5 bg-slate-100 rounded-2xl w-full sticky top-0 z-10 shadow-sm">
+                <button 
+                  onClick={() => setRegType('individual')}
+                  className={`flex-1 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${regType === 'individual' ? 'bg-white text-indigo-600 shadow-md' : 'text-slate-400'}`}
+                >Individual</button>
+                <button 
+                  onClick={() => setRegType('group')}
+                  className={`flex-1 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${regType === 'group' ? 'bg-white text-indigo-600 shadow-md' : 'text-slate-400'}`}
+                >Organization</button>
+              </div>
+            )}
+
+            {/* Dynamic Form Content */}
+            <div className="pb-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
+              {regType === 'individual' ? <AttendeeForm config={config} /> : <GroupForm config={config} />}
+            </div>
+
           </div>
         </div>
+
+        {/* Fixed Footer (Stays at the bottom of the right column) */}
+        <div className="p-6 border-t border-slate-50 bg-white/80 backdrop-blur-md text-center lg:text-left flex-shrink-0">
+          <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.4em]">
+            IYES 2026 Verification System
+          </p>
+        </div>
+
       </div>
     </div>
   );
