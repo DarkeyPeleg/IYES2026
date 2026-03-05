@@ -4,7 +4,7 @@ import { DataService } from '../services/DataService';
 const EventCreation = () => {
   const [step, setStep] = useState(1);
   const [config, setConfig] = useState(DataService.getConfig());
-  const [activeTab, setActiveTab] = useState('individual'); // 'individual' or 'org'
+  const [activeTab, setActiveTab] = useState('individual');
   const [newFieldName, setNewFieldName] = useState('');
   const [fieldType, setFieldType] = useState('text');
   const [saved, setSaved] = useState(false);
@@ -82,13 +82,30 @@ const EventCreation = () => {
 
       <div className="bg-white p-10 rounded-[3rem] shadow-2xl border border-slate-100 min-h-[500px] flex flex-col justify-between">
         
-        {/* STEP 1: IDENTITY */}
+        {/* STEP 1: IDENTITY + FLYER */}
         {step === 1 && (
           <div className="space-y-6 animate-in slide-in-from-right-4">
             <h2 className="text-2xl font-black text-slate-800">1. Event Identity</h2>
             <input className={inputCls} placeholder="Event Name" value={config.name} onChange={e => setConfig({...config, name: e.target.value})} />
             <input className={inputCls} placeholder="Venue Location" value={config.location} onChange={e => setConfig({...config, location: e.target.value})} />
             <textarea className={`${inputCls} h-32`} placeholder="Event Description..." value={config.description} onChange={e => setConfig({...config, description: e.target.value})} />
+            
+            {/* Flyer Upload Area (Swapped to Step 1) */}
+            <div className="bg-slate-50 p-6 rounded-3xl border border-dashed border-slate-200 text-center">
+               <label className="cursor-pointer">
+                  {config.flyer ? (
+                    <div className="relative group">
+                      <img src={config.flyer} className="h-32 mx-auto rounded-xl shadow-md mb-2" alt="Preview" />
+                      <p className="text-[10px] font-black text-rose-500 uppercase">Click to Change Flyer</p>
+                    </div>
+                  ) : (
+                    <div className="py-4">
+                      <p className="text-xs font-black text-indigo-600 uppercase tracking-widest">Upload Event Flyer</p>
+                    </div>
+                  )}
+                  <input type="file" className="hidden" accept="image/*" onChange={handleFlyerUpload} />
+               </label>
+            </div>
           </div>
         )}
 
@@ -113,26 +130,11 @@ const EventCreation = () => {
           </div>
         )}
 
-        {/* STEP 3: DYNAMIC FORM BUILDER & FLYER */}
+        {/* STEP 3: DYNAMIC FORM BUILDER */}
         {step === 3 && (
           <div className="space-y-6 animate-in slide-in-from-right-4">
-            <h2 className="text-2xl font-black text-slate-800">3. Visuals & Fields</h2>
+            <h2 className="text-2xl font-black text-slate-800">3. Form Fields</h2>
             
-            {/* Flyer Upload Area */}
-            <div className="bg-slate-50 p-6 rounded-3xl border border-dashed border-slate-200 text-center">
-               <label className="cursor-pointer">
-                  {config.flyer ? (
-                    <img src={config.flyer} className="h-32 mx-auto rounded-xl shadow-md mb-2" alt="Preview" />
-                  ) : (
-                    <div className="py-4">
-                      <p className="text-xs font-black text-indigo-600 uppercase tracking-widest">Upload Event Flyer</p>
-                    </div>
-                  )}
-                  <input type="file" className="hidden" accept="image/*" onChange={handleFlyerUpload} />
-               </label>
-            </div>
-
-            {/* Field Builder */}
             <div className="flex gap-4 p-1 bg-slate-100 rounded-xl w-fit mb-4">
               <button onClick={() => setActiveTab('individual')} className={`px-4 py-2 rounded-lg text-xs font-black ${activeTab === 'individual' ? 'bg-white text-indigo-600 shadow' : 'text-slate-400'}`}>Individual Form</button>
               {config.allowGroups && <button onClick={() => setActiveTab('org')} className={`px-4 py-2 rounded-lg text-xs font-black ${activeTab === 'org' ? 'bg-white text-indigo-600 shadow' : 'text-slate-400'}`}>Organization Form</button>}
@@ -149,7 +151,7 @@ const EventCreation = () => {
               </div>
             </div>
 
-            <div className="space-y-2 max-h-48 overflow-y-auto">
+            <div className="space-y-2 max-h-64 overflow-y-auto">
               {(activeTab === 'individual' ? config.customFields : config.groupFields)?.map(f => (
                 <div key={f.id} className="flex justify-between items-center p-4 bg-white border rounded-2xl shadow-sm">
                   <span className="font-bold text-slate-700">{f.label} <span className="text-[9px] text-indigo-500 uppercase ml-1">[{f.type}]</span></span>
