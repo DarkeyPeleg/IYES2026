@@ -7,38 +7,29 @@ const AttendeeForm = ({ config }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    // Safety check: Don't submit if there are no fields
-    if (!config.customFields || config.customFields.length === 0) {
-      setStatus('Error: No registration fields have been set up.');
-      return;
-    }
-
     const result = DataService.register(formData);
-    
     if (result.success) {
-      setStatus(config.successMsg || 'Registration Successful!');
+      setStatus(config.successMsg || 'Registration Complete');
       setFormData({});
-      e.target.reset(); // Clears all dynamic inputs
+      e.target.reset();
     } else {
       setStatus(result.message);
     }
   };
 
-  const inputCls = "w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-600 outline-none transition-all font-medium";
+  /**
+   * REFINED PREMIUM SCALING
+   * p-4: The professional standard for "spacious but tidy"
+   * rounded-xl: Sharp enough to be professional, soft enough to be modern
+   */
+  const inputCls = "w-full p-4 bg-slate-50/50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white outline-none transition-all duration-300 text-sm font-semibold text-slate-700 shadow-sm";
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      
-      {/* CORE CHANGE: 
-          We removed the hardcoded Name and Phone inputs. 
-          The form now ONLY shows what you create in the Setup Console.
-      */}
-
-      {config.customFields && config.customFields.length > 0 ? (
-        config.customFields.map((field) => (
-          <div key={field.id} className="animate-in fade-in slide-in-from-bottom-2">
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-5">
+        {config.customFields?.map((field) => (
+          <div key={field.id} className="group animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <label className="block text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 ml-1 group-focus-within:text-indigo-600 transition-colors">
               {field.label} {field.required && <span className="text-rose-500">*</span>}
             </label>
 
@@ -48,38 +39,30 @@ const AttendeeForm = ({ config }) => {
                 required={field.required}
                 onChange={(e) => setFormData({...formData, [field.label]: e.target.value})}
               >
-                <option value="">Select {field.label}</option>
-                {field.options?.map(opt => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
+                <option value="">Select...</option>
+                {field.options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
               </select>
             ) : (
               <input 
                 type={field.type || 'text'}
                 className={inputCls} 
-                placeholder={`Enter ${field.label.toLowerCase()}...`}
+                placeholder={field.label}
                 required={field.required}
                 onChange={(e) => setFormData({...formData, [field.label]: e.target.value})}
               />
             )}
           </div>
-        ))
-      ) : (
-        <div className="p-10 border-2 border-dashed border-slate-100 rounded-3xl text-center">
-          <p className="text-slate-400 text-sm font-bold italic">
-            Form is currently empty. Please add fields in the Setup Console.
-          </p>
-        </div>
-      )}
+        ))}
+      </div>
 
-      {config.customFields?.length > 0 && (
-        <button className="w-full bg-indigo-600 text-white font-black py-5 rounded-2xl shadow-xl hover:bg-indigo-700 active:scale-95 transition-all mt-4">
-          Register Now
+      <div className="pt-2">
+        <button className="w-full bg-slate-900 hover:bg-indigo-600 text-white font-black py-5 rounded-2xl shadow-xl shadow-indigo-100 hover:shadow-indigo-500/30 transition-all duration-500 text-[10px] uppercase tracking-[0.3em] active:scale-[0.98]">
+          Confirm Registration
         </button>
-      )}
+      </div>
 
       {status && (
-        <div className={`mt-4 p-4 rounded-xl text-center font-bold text-sm ${status.includes('Error') ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`}>
+        <div className={`mt-4 p-3 rounded-xl text-center font-bold text-[10px] animate-in zoom-in-95 ${status.includes('Error') ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`}>
           {status}
         </div>
       )}
