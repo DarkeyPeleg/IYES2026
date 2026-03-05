@@ -17,11 +17,6 @@ const AttendeeForm = ({ config }) => {
     }
   };
 
-  /**
-   * REFINED PREMIUM SCALING
-   * p-4: The professional standard for "spacious but tidy"
-   * rounded-xl: Sharp enough to be professional, soft enough to be modern
-   */
   const inputCls = "w-full p-4 bg-slate-50/50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white outline-none transition-all duration-300 text-sm font-semibold text-slate-700 shadow-sm";
 
   return (
@@ -29,25 +24,30 @@ const AttendeeForm = ({ config }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-5">
         {config.customFields?.map((field) => (
           <div key={field.id} className="group animate-in fade-in slide-in-from-bottom-2 duration-500">
+            {/* Label remains the same, but 'required' check updated to 'isRequired === "1"' */}
             <label className="block text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 ml-1 group-focus-within:text-indigo-600 transition-colors">
-              {field.label} {field.required && <span className="text-rose-500">*</span>}
+              {field.label} {field.isRequired === "1" && <span className="text-rose-500">*</span>}
             </label>
 
-            {field.type === 'select' ? (
+            {/* Swapped 'type' for 'field_type' */}
+            {field.field_type === 'select' ? (
               <select 
                 className={inputCls}
-                required={field.required}
+                required={field.isRequired === "1"}
                 onChange={(e) => setFormData({...formData, [field.label]: e.target.value})}
               >
                 <option value="">Select...</option>
-                {field.options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                {/* Swapped 'options' for 'fieldOptions' with label/value mapping */}
+                {field.fieldOptions?.map((opt, index) => (
+                  <option key={index} value={opt.option_value}>{opt.label}</option>
+                ))}
               </select>
             ) : (
               <input 
-                type={field.type || 'text'}
+                type={field.field_type || 'text'}
                 className={inputCls} 
                 placeholder={field.label}
-                required={field.required}
+                required={field.isRequired === "1"}
                 onChange={(e) => setFormData({...formData, [field.label]: e.target.value})}
               />
             )}

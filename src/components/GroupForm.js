@@ -22,48 +22,59 @@ const GroupForm = ({ config }) => {
     }
   };
 
-  // PADDING REDUCED FROM p-4 TO p-3
-  const inputCls = "w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none transition-all text-sm font-medium";
+  /**
+   * PREMIUM UI STYLING
+   * p-4: Spacious but professional padding
+   * rounded-xl: Modern clean corners
+   */
+  const inputCls = "w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white outline-none transition-all duration-300 text-sm font-semibold text-slate-700 shadow-sm";
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3">
-      {config.groupFields && config.groupFields.length > 0 ? (
-        config.groupFields.map((field) => (
-          <div key={field.id}>
-            <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">
-              {field.label} {field.required && <span className="text-rose-500">*</span>}
-            </label>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* 2-COLUMN GRID: Sit side-by-side for better UX */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-5">
+        {config.groupFields && config.groupFields.length > 0 ? (
+          config.groupFields.map((field) => (
+            <div key={field.id} className="group animate-in fade-in slide-in-from-bottom-2 duration-500">
+              <label className="block text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 ml-1 group-focus-within:text-indigo-600 transition-colors">
+                {field.label} {field.isRequired === "1" && <span className="text-rose-500">*</span>}
+              </label>
 
-            {field.type === 'select' ? (
-              <select 
-                className={inputCls} 
-                required={field.required} 
-                onChange={e => setFormData({...formData, [field.label]: e.target.value})}
-              >
-                <option value="">Select {field.label}</option>
-                {field.options?.map(o => (
-                  <option key={o} value={o}>{o}</option>
-                ))}
-              </select>
-            ) : (
-              <input 
-                type={field.type || 'text'}
-                className={inputCls} 
-                placeholder={`Enter ${field.label.toLowerCase()}`} 
-                required={field.required} 
-                onChange={e => setFormData({...formData, [field.label]: e.target.value})} 
-              />
-            )}
-          </div>
-        ))
-      ) : null}
+              {/* Swapped 'type' for 'field_type' to match De Graft's schema */}
+              {field.field_type === 'select' ? (
+                <select 
+                  className={inputCls} 
+                  required={field.isRequired === "1"} 
+                  onChange={e => setFormData({...formData, [field.label]: e.target.value})}
+                >
+                  <option value="">Select Option</option>
+                  {/* Swapped 'options' for 'fieldOptions' structure */}
+                  {field.fieldOptions?.map((opt, index) => (
+                    <option key={index} value={opt.option_value}>{opt.label}</option>
+                  ))}
+                </select>
+              ) : (
+                <input 
+                  type={field.field_type || 'text'}
+                  className={inputCls} 
+                  placeholder={field.label} 
+                  required={field.isRequired === "1"} 
+                  onChange={e => setFormData({...formData, [field.label]: e.target.value})} 
+                />
+              )}
+            </div>
+          ))
+        ) : null}
+      </div>
 
-      <button className="w-full bg-indigo-600 text-white font-black py-4 rounded-xl shadow-lg hover:bg-indigo-700 transition-all mt-2 text-xs uppercase tracking-widest">
-        Register Organization
-      </button>
+      <div className="pt-2">
+        <button className="w-full bg-slate-900 hover:bg-indigo-600 text-white font-black py-5 rounded-2xl shadow-xl shadow-indigo-100 hover:shadow-indigo-500/30 transition-all duration-500 text-[10px] uppercase tracking-[0.3em] active:scale-[0.98]">
+          Register Organization
+        </button>
+      </div>
 
       {status && (
-        <div className={`mt-2 p-2 rounded-lg text-center font-bold text-[10px] ${status.includes('Error') ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`}>
+        <div className={`mt-4 p-3 rounded-xl text-center font-bold text-[10px] animate-in zoom-in-95 ${status.includes('Error') ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`}>
           {status}
         </div>
       )}
