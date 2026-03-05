@@ -1,9 +1,10 @@
 /**
  * Data Service
- * Manages all event data using LocalStorage
+Backend Structure: Event > Fields > Options
  */
 
 const STORAGE_KEY = 'event_attendees';
+const CONFIG_KEY = 'event_config';
 
 const getAttendees = () => {
   const data = localStorage.getItem(STORAGE_KEY);
@@ -28,14 +29,11 @@ export const DataService = {
   // 2. Individual Registration
   register: (newAttendee) => {
     const attendees = getAttendees();
-    const exists = attendees.find(a => a.phone === newAttendee.phone);
-    if (exists) {
-      return { success: false, message: 'This phone number is already registered.' };
-    }
+    // Use the dynamic label for phone check if needed, or stick to 'phone'
     const attendeeRecord = {
       ...newAttendee,
       id: Math.random().toString(36).substr(2, 9),
-      hasCheckedIn: false, // Default to false for registration
+      hasCheckedIn: false,
       registeredAt: new Date().toISOString()
     };
     saveAttendees([...attendees, attendeeRecord]);
@@ -69,15 +67,15 @@ export const DataService = {
 
   getStats: () => DataService.getAll(),
 
-  // 5. Setup & Event Configuration (DYNAMIC FIELD COMPATIBLE)
+  // 5. Setup & Event Configuration
   saveConfig: (config) => {
-    localStorage.setItem('event_config', JSON.stringify(config));
+    localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
   },
 
   getConfig: () => {
-    const cfg = localStorage.getItem('event_config');
+    const cfg = localStorage.getItem(CONFIG_KEY);
     
-    // Default structure for a professional setup
+    // Default nested structure 
     const baseDefaults = { 
       name: 'IYES 2026', 
       location: '', 
@@ -85,27 +83,30 @@ export const DataService = {
       endDate: '',
       description: '',
       capacity: 1000,
-      regMode: { preReg: true, onSite: true },
-      linkExpiry: '', 
       flyer: null,
       allowGroups: true,
       pin: '0000',
-      // This is where your typed fields live!
+      successMsg: 'Registration Successful!',
+      // Individual "Event Fields"
       customFields: [
-        { id: '1', label: 'Email Address' },
-        { id: '2', label: 'Location' }
+        { id: 'f1', label: 'Full Name', type: 'text', required: true },
+        { id: 'f2', label: 'Gender', type: 'select', required: true, options: ['Male', 'Female', 'Other'] }
       ],
-      successMsg: 'Registration Successful!'
+      // Organization "Event Fields"
+      groupFields: [
+        { id: 'g1', label: 'Organization Name', type: 'text', required: true }
+      ]
     };
 
     if (!cfg) return baseDefaults;
     
     const parsed = JSON.parse(cfg);
-    // Return saved data but ensure customFields exists to prevent crashes
+    // Deep merge to ensure customFields and groupFields exist
     return { 
       ...baseDefaults, 
       ...parsed,
-      customFields: parsed.customFields || baseDefaults.customFields 
+      customFields: parsed.customFields || baseDefaults.customFields,
+      groupFields: parsed.groupFields || baseDefaults.groupFields
     };
   },
 
