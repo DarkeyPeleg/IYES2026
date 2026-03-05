@@ -25,7 +25,7 @@ export const DataService = {
   // 2. ACCOUNT CREATION (Matches De Graft's latest keys)
   createAccount: async (userData) => {
     try {
-      const response = await fetch(`${BASE_URL}/users/`, {
+      const response = await fetch(`${BASE_URL}/users/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
