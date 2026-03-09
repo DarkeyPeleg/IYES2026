@@ -5,13 +5,17 @@ const AttendeeForm = ({ config }) => {
   const [formData, setFormData] = useState({});
   const [status, setStatus] = useState('');
 
-  const handleSubmit = (e) => {
+  // THE FIX: Changed to 'async' to handle the DataService fetch
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const result = DataService.register(formData);
+    const result = await DataService.register(formData); 
+    
     if (result.success) {
       setStatus(config.successMsg || 'Registration Complete');
-      setFormData({});
-      e.target.reset();
+      
+      // THE FIX: This only works if 'value' is added to inputs below
+      setFormData({}); 
+      e.target.reset(); 
     } else {
       setStatus(result.message);
     }
@@ -24,20 +28,19 @@ const AttendeeForm = ({ config }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-5">
         {config.customFields?.map((field) => (
           <div key={field.id} className="group animate-in fade-in slide-in-from-bottom-2 duration-500">
-            {/* Label remains the same, but 'required' check updated to 'isRequired === "1"' */}
             <label className="block text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 ml-1 group-focus-within:text-indigo-600 transition-colors">
               {field.label} {field.isRequired === "1" && <span className="text-rose-500">*</span>}
             </label>
 
-            {/* Swapped 'type' for 'field_type' */}
             {field.field_type === 'select' ? (
               <select 
                 className={inputCls}
+                // THE FIX: Tie UI to state
+                value={formData[field.label] || ""} 
                 required={field.isRequired === "1"}
                 onChange={(e) => setFormData({...formData, [field.label]: e.target.value})}
               >
                 <option value="">Select...</option>
-                {/* Swapped 'options' for 'fieldOptions' with label/value mapping */}
                 {field.fieldOptions?.map((opt, index) => (
                   <option key={index} value={opt.option_value}>{opt.label}</option>
                 ))}
@@ -47,6 +50,8 @@ const AttendeeForm = ({ config }) => {
                 type={field.field_type || 'text'}
                 className={inputCls} 
                 placeholder={field.label}
+                // THE FIX: Tie UI to state
+                value={formData[field.label] || ""} 
                 required={field.isRequired === "1"}
                 onChange={(e) => setFormData({...formData, [field.label]: e.target.value})}
               />

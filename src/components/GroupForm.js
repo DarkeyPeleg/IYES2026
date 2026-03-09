@@ -5,33 +5,30 @@ const GroupForm = ({ config }) => {
   const [formData, setFormData] = useState({});
   const [status, setStatus] = useState('');
 
-  const handleSubmit = (e) => {
+  // THE FIX: Changed to 'async' to match the DataService update
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!config.groupFields || config.groupFields.length === 0) {
       setStatus('Error: No fields set up.');
       return;
     }
 
-    const result = DataService.registerGroup(formData);
+    const result = await DataService.registerGroup(formData);
     if (result.success) {
       setStatus(config.successMsg || 'Success!');
+      // THE FIX: Clears internal state
       setFormData({});
+      // THE FIX: Resets physical HTML inputs
       e.target.reset();
     } else {
       setStatus(result.message);
     }
   };
 
-  /**
-   * PREMIUM UI STYLING
-   * p-4: Spacious but professional padding
-   * rounded-xl: Modern clean corners
-   */
   const inputCls = "w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white outline-none transition-all duration-300 text-sm font-semibold text-slate-700 shadow-sm";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* 2-COLUMN GRID: Sit side-by-side for better UX */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-5">
         {config.groupFields && config.groupFields.length > 0 ? (
           config.groupFields.map((field) => (
@@ -40,15 +37,15 @@ const GroupForm = ({ config }) => {
                 {field.label} {field.isRequired === "1" && <span className="text-rose-500">*</span>}
               </label>
 
-              {/* Swapped 'type' for 'field_type' to match De Graft's schema */}
               {field.field_type === 'select' ? (
                 <select 
                   className={inputCls} 
+                  // THE FIX: Ties UI value to state so it can reset
+                  value={formData[field.label] || ""}
                   required={field.isRequired === "1"} 
                   onChange={e => setFormData({...formData, [field.label]: e.target.value})}
                 >
                   <option value="">Select Option</option>
-                  {/* Swapped 'options' for 'fieldOptions' structure */}
                   {field.fieldOptions?.map((opt, index) => (
                     <option key={index} value={opt.option_value}>{opt.label}</option>
                   ))}
@@ -58,6 +55,8 @@ const GroupForm = ({ config }) => {
                   type={field.field_type || 'text'}
                   className={inputCls} 
                   placeholder={field.label} 
+                  // THE FIX: Ties UI value to state so it can reset
+                  value={formData[field.label] || ""}
                   required={field.isRequired === "1"} 
                   onChange={e => setFormData({...formData, [field.label]: e.target.value})} 
                 />

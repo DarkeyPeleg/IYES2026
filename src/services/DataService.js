@@ -1,6 +1,6 @@
 /**
- * Data Service - Complete v1
- * Fixes: getStats crash, registerGroup missing, and CORS-ready API
+ * Data Service - Updated March 9, 2026
+ * Fixes: getUserProfile crash & matches De Graft's latest API specs
  */
 
 const BASE_URL = 'https://plusureventsbackend.vercel.app/api/v1';
@@ -9,7 +9,7 @@ const CONFIG_KEY = 'event_config';
 
 export const DataService = {
   
-  // 1. DASHBOARD & CHECK-IN LOGIC (Fixes the current error)
+  // 1. DASHBOARD & ANALYTICS
   getAll: () => {
     const data = localStorage.getItem(STORAGE_KEY);
     const list = data ? JSON.parse(data) : [];
@@ -20,9 +20,16 @@ export const DataService = {
     };
   },
 
-  getStats: () => DataService.getAll(), // Restored to stop the crash
+  getStats: () => DataService.getAll(),
 
-  // 2. ACCOUNT CREATION (Matches De Graft's latest keys)
+  // 2. USER PROFILE (Fixes the current "getUserProfile is not a function" error)
+  getUserProfile: () => ({ 
+    name: 'Peleg Teye Darkey', 
+    avatar: null,
+    role: 'MSc Computer Science Student' 
+  }),
+
+  // 3. ACCOUNT MANAGEMENT
   createAccount: async (userData) => {
     try {
       const response = await fetch(`${BASE_URL}/users/create`, {
@@ -40,21 +47,27 @@ export const DataService = {
       return await response.json();
     } catch (error) {
       console.error("CORS Error:", error);
-      return { success: false, message: "Server security (CORS) blocked the request." };
+      return { success: false, message: "Connection blocked by CORS." };
     }
   },
 
-  // 3. SETUP & REGISTRATION
+  // 4. EVENT SETUP - Updated for March 9 Specs
   saveConfig: async (config) => {
     localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
     try {
-      const response = await fetch(`${BASE_URL}/events/`, {
+      const response = await fetch(`${BASE_URL}/events/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...config,
+          name: config.name,
+          location: config.location,
+          description: config.description,
+          group: config.group || true,
+          start_date: config.startDate, 
+          end_date: config.endDate,     
+          expiry: config.linkExpiry,    
           no_attendee: parseInt(config.no_attendee),
-          user: { id: 1 }
+          user: { id: 3 } // Updated to User ID 3 as per De Graft
         })
       });
       return await response.json();
@@ -63,20 +76,51 @@ export const DataService = {
     }
   },
 
+  // 5. CUSTOM FIELD SETUP
+  createFields: async (fields, eventId) => {
+    try {
+      const payload = fields.map(f => ({
+        label: f.label,
+        field_type: f.field_type,
+        isRequired: f.isRequired ? "1" : "0", 
+        event: { id: eventId || 5 },         
+        fieldOptions: f.fieldOptions || []   
+      }));
+
+      const response = await fetch(`${BASE_URL}/fields/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      return await response.json();
+    } catch (error) {
+      return { success: false };
+    }
+  },
+
+  // 6. REGISTRATION LOGIC
   register: async (formData) => {
     const attendees = DataService.getAll().attendees;
-    const record = { ...formData, id: Date.now(), hasCheckedIn: false };
+    const record = { ...formData, id: Date.now(), hasCheckedIn: false, isGroup: false };
     localStorage.setItem(STORAGE_KEY, JSON.stringify([...attendees, record]));
     return { success: true, data: record };
   },
 
-  registerGroup: (groupData) => DataService.register(groupData),
+  registerGroup: async (groupData) => {
+    const attendees = DataService.getAll().attendees;
+    const record = { 
+      ...groupData, 
+      id: 'GRP-' + Date.now(), 
+      hasCheckedIn: false, 
+      isGroup: true 
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([...attendees, record]));
+    return { success: true, data: record };
+  },
 
-  // 4. UTILITIES
+  // 7. UTILITIES
   getConfig: () => JSON.parse(localStorage.getItem(CONFIG_KEY)) || { name: 'IYES 2026', group: true, customFields: [] },
   
-  getUserProfile: () => ({ name: 'Peleg Darkey', avatar: null }),
-
   checkIn: (phone) => {
     const attendees = DataService.getAll().attendees;
     const index = attendees.findIndex(a => a.phone === phone);
