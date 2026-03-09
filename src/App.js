@@ -1,113 +1,79 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from "react-router-dom";
 import { DataService } from './services/DataService'; 
 import Registration from "./pages/Registration";
-import CheckIn from "./pages/CheckIn";
 import AdminDashboard from "./pages/AdminDashboard";
-import EventCreation from "./pages/EventCreation";
 import Auth from './pages/Auth';
 import Settings from './pages/Settings'; 
 
-const NavItem = ({ to, children }) => {
+const Navigation = () => {
   const location = useLocation();
-  const isActive = location.pathname === to;
+  const admin = DataService.getUserProfile();
+
+  // HIDE NAV ON REGISTRATION PAGE
+  if (location.pathname === "/") return null;
+
   return (
-    <Link
-      to={to}
-      className={`px-4 py-2 rounded-xl text-sm font-bold transition-all duration-300 ${
-        isActive 
-          ? "bg-white text-indigo-600 shadow-lg scale-105" 
-          : "text-indigo-100 hover:bg-indigo-500 hover:text-white"
-      }`}
-    >
-      {children}
-    </Link>
+    <nav className="sticky top-0 z-50 bg-[#1a0b2e] border-b border-white/5 shadow-2xl px-6 py-4">
+      <div className="max-w-7xl mx-auto flex items-center justify-between">
+        {/* Branding */}
+        <Link to="/" className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-inner">
+            <div className="w-5 h-5 bg-[#f89c1d] rounded-md"></div>
+          </div>
+          <span className="text-white font-black tracking-tighter text-2xl uppercase italic">
+            IYES<span className="text-purple-400"> 2026</span>
+          </span>
+        </Link>
+
+        {/* Links */}
+        <div className="flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-2 bg-purple-900/40 p-1.5 rounded-2xl border border-white/10">
+            <Link to="/" className="px-5 py-2 rounded-xl text-[10px] font-black uppercase text-purple-100 hover:text-white">Portal</Link>
+            <Link to="/dashboard" className="px-5 py-2 rounded-xl text-[10px] font-black uppercase bg-white text-purple-700 shadow-lg">Dashboard</Link>
+          </div>
+          
+          <Link to="/settings" className="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-600 to-[#f89c1d] p-[2px]">
+            <div className="w-full h-full rounded-full bg-[#1a0b2e] flex items-center justify-center text-white text-xs font-black">
+               {admin.name?.charAt(0) || 'P'}
+            </div>
+          </Link>
+        </div>
+      </div>
+    </nav>
   );
 };
 
 function App() {
-  // Always fetch the admin profile
-  const admin = DataService.getUserProfile();
-
   return (
     <Router>
-      <div className="min-h-screen bg-slate-50 flex flex-col">
+      <div className="min-h-screen bg-[#0a0510] flex flex-col">
+        <Navigation />
         
-        <nav className="sticky top-0 z-50 bg-indigo-600 border-b border-indigo-500 shadow-xl px-6 py-4">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            
-            {/* 1. Branding */}
-            <Link to="/" className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-inner">
-                <div className="w-5 h-5 bg-indigo-600 rounded-md"></div>
-              </div>
-              <span className="text-white font-black tracking-tighter text-2xl">
-                IYES<span className="text-indigo-200"> 2026</span>
-              </span>
-            </Link>
-
-            {/* 2. Navigation & Profile Controls */}
-            <div className="flex items-center gap-4">
-              
-              {/* Management Links (Always Visible) */}
-              <div className="flex items-center gap-2 bg-indigo-700/40 p-1.5 rounded-2xl border border-indigo-400/20">
-                <NavItem to="/register">Register</NavItem>
-                <NavItem to="/checkin">Check-In</NavItem>
-                <div className="w-[1px] h-6 bg-indigo-400/40 mx-1 hidden md:block" />
-                <NavItem to="/organizer/dashboard">Dashboard</NavItem>
-                <NavItem to="/organizer/create-event">Setup</NavItem>
-              </div>
-
-              {/* 3. Profile Tab (Always Visible) */}
-              <div className="flex items-center gap-2 pl-2 border-l border-indigo-400/30">
-                <Link to="/settings" className="flex items-center gap-3 group">
-                  <div className="text-right hidden sm:block">
-                    <p className="text-[10px] text-indigo-200 font-black uppercase tracking-widest leading-none">Organizer</p>
-                    <p className="text-sm text-white font-bold">{admin.name || 'Admin'}</p>
-                  </div>
-                  
-                  {/* Avatar Display */}
-                  <div className="w-10 h-10 rounded-full bg-indigo-400 border-2 border-indigo-300 flex items-center justify-center text-white font-black shadow-md group-hover:scale-105 transition-transform overflow-hidden">
-                    {admin.avatar ? (
-                      <img src={admin.avatar} className="w-full h-full object-cover" alt="Profile" />
-                    ) : (
-                      (admin.name || 'A').charAt(0)
-                    )}
-                  </div>
-                </Link>
-                
-                {/* Subtle Login Link for testing purposes */}
-                <Link to="/login" className="ml-2 text-indigo-300 hover:text-white text-[10px] font-black uppercase tracking-tighter">
-                  Auth
-                </Link>
-              </div>
-            </div>
-          </div>
-        </nav>
-
-        {/* Dynamic Page Content */}
-        <main className="flex-grow container mx-auto py-12 px-4">
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700">
-            <Routes>
-              <Route path="/register" element={<Registration />} />
-              <Route path="/checkin" element={<CheckIn />} />
-              <Route path="/organizer/dashboard" element={<AdminDashboard />} />
-              <Route path="/organizer/create-event" element={<EventCreation />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/login" element={<Auth />} />
-              <Route path="*" element={<Registration />} />
-            </Routes>
-          </div>
+        <main className="flex-grow flex flex-col">
+          <Routes>
+            <Route path="/" element={<Registration />} />
+            <Route path="/dashboard" element={<AdminDashboard />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/login" element={<Auth />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
         </main>
 
-        <footer className="py-8 text-center border-t border-slate-200 bg-white">
-          <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">
-            IYES 2026 v1.0
-          </p>
-        </footer>
-
+        {/* Footer only on internal pages */}
+        <FooterController />
       </div>
     </Router>
+  );
+}
+
+const FooterController = () => {
+  const location = useLocation();
+  if (location.pathname === "/") return null;
+  return (
+    <footer className="py-6 text-center bg-white border-t border-slate-100">
+      <p className="text-slate-400 text-[9px] font-black uppercase tracking-[0.4em]">IYES Ghana 2026 • Admin Terminal</p>
+    </footer>
   );
 }
 

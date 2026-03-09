@@ -2,145 +2,120 @@ import React, { useState, useEffect } from 'react';
 import { DataService } from '../services/DataService';
 import AttendeeForm from '../components/AttendeeForm';
 import GroupForm from '../components/GroupForm';
+import IYESFlyer from '../img/flyer.jpeg';
 
 const Registration = () => {
   const [regType, setRegType] = useState('individual');
-  const [config] = useState(DataService.getConfig());
-  
-  // High-End UX: Lock the body scroll to create a fixed "Terminal" app feel
+
   useEffect(() => {
+    // LOCK VIEWPORT: Prevents page-level scrolling to keep the flyer pinned
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = 'auto'; };
   }, []);
 
-  const isExpired = config.linkExpiry && new Date() > new Date(config.linkExpiry);
-
-  if (isExpired) {
-    return (
-      <div className="h-screen w-screen flex items-center justify-center bg-slate-50 p-6">
-        <div className="max-w-md w-full p-12 bg-white rounded-[3rem] shadow-2xl text-center border border-slate-100 animate-in fade-in zoom-in duration-500">
-          <div className="text-4xl mb-4">⌛</div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Portal Closed</h2>
-          <p className="text-slate-400 mt-2 font-medium text-sm text-center">This registration link has expired.</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="h-screen w-full overflow-hidden flex flex-col lg:flex-row bg-white font-sans">
+    <div className="h-screen w-full overflow-hidden flex flex-col lg:flex-row bg-[#0a0510] font-sans selection:bg-purple-500/30">
       
-      {/* LEFT SIDE: Premium Framed Visuals */}
-      <div className="hidden lg:flex lg:w-5/12 h-full bg-slate-950 items-center justify-center relative overflow-hidden border-r border-white/5">
-        {config.flyer ? (
-          <>
-            {/* 1. Deep Background Layer: Blurred and Darkened */}
-            <img 
-              src={config.flyer} 
-              className="absolute inset-0 w-full h-full object-cover opacity-10 blur-[60px] scale-125" 
-              alt="bg" 
-            />
-            
-            {/* 2. Gradient Vignette: Softens the edges */}
-            <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-transparent to-slate-950" />
-            <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-transparent to-transparent" />
-
-            {/* 3. The "Frame": Keeps the picture from showing "too full" */}
-            <div className="relative z-10 w-[75%] h-[75%] flex items-center justify-center">
-              <div className="relative group">
-                <div className="absolute -inset-6 bg-indigo-500/20 rounded-[3rem] blur-3xl group-hover:bg-indigo-500/30 transition-all duration-700"></div>
-                <img 
-                  src={config.flyer} 
-                  alt="Event Flyer" 
-                  className="relative z-10 max-h-full max-w-full shadow-[0_50px_100px_-20px_rgba(0,0,0,0.7)] rounded-[2.5rem] border border-white/10 object-contain hover:scale-[1.02] transition-transform duration-700" 
-                />
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="text-white/5 text-[10rem] font-black rotate-12 uppercase select-none tracking-tighter">IYES</div>
-        )}
+      {/* LEFT SIDE: CINEMATIC FLYER FRAME */}
+      <div className="hidden lg:flex lg:w-5/12 h-full items-center justify-center relative overflow-hidden shrink-0 border-r border-white/5 bg-[#0a0510]">
         
-        <div className="absolute bottom-10 left-10 z-20">
-          <p className="text-white/40 font-black text-[9px] uppercase tracking-[0.5em] mb-1">Authenticated Terminal</p>
-          <div className="h-0.5 w-8 bg-indigo-500"></div>
+        {/* Ambient background glow (Pulsing Animation) */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            src={IYESFlyer} 
+            className="w-full h-full object-cover opacity-20 blur-[120px] scale-150 animate-pulse" 
+            style={{ animationDuration: '15s' }}
+            alt="Ambient Glow" 
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#0a0510] via-transparent to-purple-950/30" />
+        </div>
+
+        {/* Digital Frame (Scaled Down for Premium Feel) */}
+        <div className="relative z-10 w-[65%] h-auto aspect-[3/4.2] flex items-center justify-center">
+          <div className="relative group p-1.5 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl shadow-2xl">
+            
+            {/* Dynamic Backlight */}
+            <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-[#f89c1d] rounded-3xl blur-xl opacity-10 group-hover:opacity-30 transition-all duration-700"></div>
+            
+            {/* The Image Container */}
+            <div className="relative z-10 w-full h-full overflow-hidden rounded-2xl bg-[#0d0714] border border-white/5 group-hover:border-purple-500/30 transition-all duration-500">
+              <img 
+                src={IYESFlyer} 
+                alt="IYES Ghana 2026" 
+                className="relative z-0 w-full h-full object-contain transform group-hover:scale-[1.03] transition-transform duration-700 ease-out" 
+              />
+              
+              {/* Gold Corner Accent */}
+              <div className="absolute top-0 right-0 w-16 h-16 bg-[#f89c1d]/10 rounded-bl-full border-l border-b border-[#f89c1d]/20 blur-sm pointer-events-none"></div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Authenticated Terminal Label */}
+        <div className="absolute bottom-12 left-12 z-20 flex flex-col gap-1.5">
+          <p className="text-white/40 font-black text-[9px] uppercase tracking-[0.5em] leading-none">Authenticated Terminal</p>
+          <div className="h-0.5 w-12 bg-[#f89c1d] rounded-full shadow-[0_0_8px_rgba(248,156,29,0.5)]"></div>
         </div>
       </div>
 
-      {/* RIGHT SIDE: High-End Interactive Form */}
-      <div className="w-full lg:w-7/12 h-full flex flex-col bg-white relative">
-        
-        {/* Mobile Header Image (Fixed) */}
-        {config.flyer && (
-          <div className="lg:hidden h-40 w-full flex-shrink-0 relative overflow-hidden">
-            <img src={config.flyer} alt="Flyer" className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col justify-end p-6">
-               <h1 className="text-white text-xl font-black uppercase tracking-tight">{config.name}</h1>
+      {/* RIGHT SIDE: INTERACTIVE REGISTRATION CONSOLE */}
+      <div className="w-full lg:w-7/12 h-full flex flex-col bg-[#0d0714] relative">
+        {/* Noise texture overlay for high-end material look */}
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
+
+        <header className="px-8 pt-12 lg:px-20 lg:pt-20 pb-6 shrink-0 z-10">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-6 mb-10">
+            <div className="space-y-2">
+              <span className="inline-block px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[9px] font-black uppercase tracking-[0.3em]">
+                Secure Portal 2.0
+              </span>
+              <h1 className="text-5xl lg:text-6xl font-black text-white tracking-tight leading-none">
+                Register <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-[#f89c1d] italic">Now.</span>
+              </h1>
+            </div>
+            <div className="md:text-right space-y-1">
+                <p className="text-[10px] font-black text-white uppercase tracking-widest">UPSA AUDITORIUM</p>
+                <p className="text-[10px] font-black text-[#f89c1d] uppercase tracking-widest">MARCH 10TH - 13TH, 2026</p>
             </div>
           </div>
-        )}
+          
+          {/* HIGH-END TAB SELECTOR */}
+          <div className="relative flex p-1 bg-white/5 rounded-2xl border border-white/5 backdrop-blur-xl max-w-md">
+            <div 
+              className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl transition-all duration-500 ease-out shadow-lg ${regType === 'group' ? 'left-[calc(50%+2px)]' : 'left-1'}`}
+            />
+            <button 
+              onClick={() => setRegType('individual')}
+              className={`relative z-10 flex-1 py-4 text-[10px] font-black uppercase tracking-[0.2em] transition-colors duration-300 ${regType === 'individual' ? 'text-white' : 'text-white/40 hover:text-white/60'}`}
+            >Individual</button>
+            <button 
+              onClick={() => setRegType('group')}
+              className={`relative z-10 flex-1 py-4 text-[10px] font-black uppercase tracking-[0.2em] transition-colors duration-300 ${regType === 'group' ? 'text-white' : 'text-white/40 hover:text-white/60'}`}
+            >Organization</button>
+          </div>
+        </header>
 
-        {/* SCROLLABLE CONTENT AREA */}
-        <div className="flex-grow overflow-y-auto scrollbar-hide">
-          <div className="max-w-2xl mx-auto p-8 md:p-14 lg:p-20 space-y-12">
-            
-            <header className="space-y-4">
-              <div className="space-y-2">
-                <p className="text-indigo-600 font-black text-[10px] uppercase tracking-[0.4em]">Official Portal</p>
-                <h1 className="text-5xl font-black text-slate-900 tracking-tighter leading-[0.9]">
-                  {config.name}
-                </h1>
-              </div>
-              
-              <div className="flex flex-wrap gap-2 pt-2">
-                <span className="px-3 py-1 bg-slate-100 text-slate-500 rounded-lg text-[10px] font-black uppercase tracking-widest">
-                  {config.location || 'Accra, Ghana'}
-                </span>
-                {config.startDate && (
-                  <span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-black uppercase tracking-widest">
-                    {new Date(config.startDate).toLocaleDateString()}
-                  </span>
-                )}
-              </div>
-              
-              <p className="text-slate-400 font-medium leading-relaxed text-sm max-w-lg">
-                {config.description}
-              </p>
-            </header>
-
-            {/* Premium Tab Selector */}
-            {config.allowGroups && (
-              <div className="flex p-1.5 bg-slate-100/80 rounded-[1.5rem] w-full sticky top-0 z-20 backdrop-blur-md shadow-sm border border-white/50">
-                <button 
-                  onClick={() => setRegType('individual')}
-                  className={`flex-1 py-3.5 rounded-[1.25rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${regType === 'individual' ? 'bg-white text-indigo-600 shadow-xl' : 'text-slate-400 hover:text-slate-600'}`}
-                >Individual</button>
-                <button 
-                  onClick={() => setRegType('group')}
-                  className={`flex-1 py-3.5 rounded-[1.25rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${regType === 'group' ? 'bg-white text-indigo-600 shadow-xl' : 'text-slate-400 hover:text-slate-600'}`}
-                >Organization</button>
-              </div>
-            )}
-
-            {/* THE FORM */}
-            <div className="pb-10 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-              {regType === 'individual' ? <AttendeeForm config={config} /> : <GroupForm config={config} />}
+        {/* INDEPENDENT SCROLL AREA */}
+        <div className="flex-grow overflow-y-auto px-8 lg:px-20 scrollbar-hide py-6">
+          <div className="max-w-xl mx-auto">
+            <div className="animate-in fade-in slide-in-from-bottom-8 duration-1000">
+              {regType === 'individual' ? <AttendeeForm /> : <GroupForm />}
             </div>
-
           </div>
         </div>
 
-        {/* FIXED FOOTER */}
-        <footer className="p-8 border-t border-slate-50 bg-white/90 backdrop-blur-md flex-shrink-0 flex justify-between items-center">
-          <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.5em]">
-            Terminal v2.1
-          </p>
-          <div className="flex items-center gap-2">
-             <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
-             <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest text-center">System Live</span>
+        {/* PREMIUM MINIMALIST FOOTER */}
+        <footer className="px-8 lg:px-20 py-8 border-t border-white/5 shrink-0 flex justify-between items-center bg-[#0d0714]/80 backdrop-blur-md">
+          <div className="flex items-center gap-6">
+            <p className="text-[8px] font-black text-white/20 uppercase tracking-[0.4em]">Auth ID: IYES-26-SYS</p>
+            <div className="h-4 w-px bg-white/5"></div>
+            <p className="text-[8px] font-black text-white/20 uppercase tracking-[0.4em]">Terminal v2.1</p>
+          </div>
+          <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-emerald-500/5 border border-emerald-500/10">
+             <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></div>
+             <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Gateway Active</span>
           </div>
         </footer>
-
       </div>
     </div>
   );

@@ -3,130 +3,112 @@ import { DataService } from '../services/DataService';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState(DataService.getStats());
-  const [config] = useState(DataService.getConfig());
-  const [activeTab, setActiveTab] = useState('individual'); // 'individual' or 'org'
+  const [activeTab, setActiveTab] = useState('individual');
   const [filter, setFilter] = useState('');
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setStats(DataService.getStats());
-    }, 5000);
+    const interval = setInterval(() => setStats(DataService.getStats()), 3000);
     return () => clearInterval(interval);
   }, []);
 
-  // Switch columns based on the active tab
-  const dynamicColumns = activeTab === 'individual' 
-    ? (config.customFields || []) 
-    : (config.groupFields || []);
+  const filteredData = stats.attendees
+    .filter(a => activeTab === 'org' ? a.isGroup : !a.isGroup)
+    .filter(a => Object.values(a).some(v => String(v).toLowerCase().includes(filter.toLowerCase())));
 
-  // Filter logic for the active tab
-  const tabData = stats.attendees.filter(a => activeTab === 'org' ? a.isGroup : !a.isGroup);
-  
-  const filteredData = tabData.filter(a => {
-    const searchTerm = filter.toLowerCase();
-    return Object.values(a).some(val => String(val).toLowerCase().includes(searchTerm));
-  });
-
-  const exportToCSV = () => {
-    if (filteredData.length === 0) return alert("No data in this tab to export");
-    const headers = [...dynamicColumns.map(c => c.label), "Status", "Time"];
-    const rows = filteredData.map(a => [
-      ...dynamicColumns.map(c => a[c.label] || ""),
-      a.hasCheckedIn ? "Checked In" : "Registered",
-      new Date(a.registeredAt).toLocaleString()
-    ]);
-    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${config.name}_${activeTab}_Data.csv`;
-    link.click();
-  };
-
-  const deleteAttendee = (id) => {
-    if (window.confirm("Are you sure you want to remove this record?")) {
-      // Logic to delete would go here in DataService
-      alert("Delete functionality triggered for ID: " + id);
-    }
+  const handleCheckIn = (id) => {
+    DataService.checkIn(id);
+    setStats(DataService.getStats());
   };
 
   return (
-    <div className="max-w-7xl mx-auto py-10 px-4 space-y-10 animate-in fade-in duration-500">
-      
-      {/* HEADER & METRICS (Always visible) */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tighter italic">{config.name}</h1>
-          <p className="text-slate-400 font-black uppercase tracking-[0.3em] text-[9px] mt-1">Analytics Terminal</p>
+    <div className="h-screen w-full overflow-hidden flex flex-col bg-[#0a0510] font-sans selection:bg-purple-500/30">
+      {/* 1. ANALYTICS HEADER (Pinned) */}
+      <header className="shrink-0 p-8 lg:px-12 lg:pt-12 pb-6 border-b border-white/5 bg-[#0d0714]">
+        <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-10">
+          <div>
+            <span className="inline-block px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[9px] font-black uppercase tracking-[0.3em] mb-3">
+              Analytics Terminal v2.1
+            </span>
+            <h1 className="text-4xl font-black text-white tracking-tighter italic">IYES <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-[#f89c1d]">2026</span></h1>
+          </div>
+          
+          <div className="relative group">
+            <input 
+              placeholder="Search ID/Phone/Name..." 
+              className="bg-white/5 border border-white/10 rounded-2xl px-6 py-3 text-sm font-bold text-white outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 w-80 transition-all placeholder:text-white/20" 
+              value={filter} 
+              onChange={e => setFilter(e.target.value)} 
+            />
+          </div>
         </div>
-        <div className="flex gap-3">
-          <button onClick={exportToCSV} className="bg-white border-2 border-slate-100 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 transition-all">Export {activeTab}</button>
-          <input 
-            type="text" 
-            placeholder={`Search ${activeTab}s...`} 
-            className="bg-white border-2 border-slate-100 rounded-2xl px-5 py-2.5 text-sm font-bold outline-none focus:border-indigo-600 w-64 shadow-xl shadow-slate-200/40"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-          />
+
+        {/* STATS GRID */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard title="Total Registrations" value={stats.total} color="purple" />
+          <StatCard title="Verified In" value={stats.checkedIn} color="emerald" />
+          <StatCard title="Individuals" value={stats.attendees.filter(a => !a.isGroup).length} color="blue" />
+          <StatCard title="Organizations" value={stats.attendees.filter(a => a.isGroup).length} color="amber" />
         </div>
-      </div>
+      </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <StatCard title="Total" value={stats.total} icon="👥" color="indigo" />
-        <StatCard title="Verified" value={stats.checkedIn} icon="✅" color="emerald" />
-        <StatCard title="Individual" value={stats.attendees.filter(a => !a.isGroup).length} icon="👤" color="blue" />
-        <StatCard title="Organization" value={stats.attendees.filter(a => a.isGroup).length} icon="🏢" color="amber" />
-      </div>
+      {/* 2. COMMAND TABLE AREA */}
+      <div className="flex-grow flex flex-col bg-[#0d0714] relative overflow-hidden">
+        {/* Subtle noise texture to match Registration page */}
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
 
-      {/* TABS & DATA TABLE */}
-      <div className="bg-white rounded-[3rem] shadow-2xl shadow-slate-200/60 border border-slate-100 overflow-hidden">
-        <div className="flex p-4 bg-slate-50/50 border-b border-slate-100 gap-2">
+        {/* TAB SWITCHER */}
+        <div className="flex p-4 bg-white/5 border-b border-white/5 gap-2 shrink-0 backdrop-blur-md">
           <button 
-            onClick={() => setActiveTab('individual')}
-            className={`px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'individual' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
+            onClick={() => setActiveTab('individual')} 
+            className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'individual' ? 'bg-purple-600 text-white shadow-[0_0_20px_rgba(147,51,234,0.3)]' : 'text-white/40 hover:text-white/60'}`}
           >
             Individual Records
           </button>
           <button 
-            onClick={() => setActiveTab('org')}
-            className={`px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'org' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
+            onClick={() => setActiveTab('org')} 
+            className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'org' ? 'bg-purple-600 text-white shadow-[0_0_20px_rgba(147,51,234,0.3)]' : 'text-white/40 hover:text-white/60'}`}
           >
-            Organization Records
+            Organizations
           </button>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50/30">
-                {dynamicColumns.map(col => (
-                  <th key={col.id} className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest pl-10">{col.label}</th>
-                ))}
-                <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest pr-10 text-right">Actions</th>
+        {/* INDEPENDENT SCROLL TABLE */}
+        <div className="flex-grow overflow-y-auto scrollbar-hide">
+          <table className="w-full text-left border-separate border-spacing-0">
+            <thead className="sticky top-0 bg-[#0d0714]/95 backdrop-blur-xl z-20 border-b border-white/5">
+              <tr className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">
+                <th className="p-6 pl-12 border-b border-white/5">Full Name / Identity</th>
+                <th className="p-6 border-b border-white/5">Contact Phone</th>
+                <th className="p-6 border-b border-white/5">Residential Hub</th>
+                <th className="p-6 border-b border-white/5 text-right pr-12">Action Control</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
-              {filteredData.length > 0 ? filteredData.map((person, i) => (
-                <tr key={i} className="hover:bg-indigo-50/30 transition-colors group">
-                  {dynamicColumns.map(col => (
-                    <td key={col.id} className="p-6 text-sm font-bold text-slate-700 pl-10">{person[col.label] || '—'}</td>
-                  ))}
-                  <td className="p-6">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${person.hasCheckedIn ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
-                      <span className="text-[10px] font-black uppercase text-slate-400">{person.hasCheckedIn ? 'In' : 'Out'}</span>
-                    </div>
+            <tbody className="divide-y divide-white/5">
+              {filteredData.length > 0 ? filteredData.map((a, i) => (
+                <tr key={a.id || i} className="group hover:bg-white/[0.02] transition-colors">
+                  <td className="p-6 pl-12">
+                    <p className="font-black text-white text-sm">{a.firstname} {a.lastname}</p>
+                    <p className="text-[10px] text-white/30 uppercase tracking-tighter">{a.email}</p>
                   </td>
-                  <td className="p-6 text-right pr-10">
-                    <button onClick={() => deleteAttendee(person.id)} className="text-rose-400 hover:text-rose-600 font-bold text-xs uppercase opacity-0 group-hover:opacity-100 transition-opacity">Delete</button>
+                  <td className="p-6 text-sm font-bold text-white/60 tracking-widest">{a.phone}</td>
+                  <td className="p-6 text-sm font-bold text-white/60 uppercase">{a.residence}</td>
+                  <td className="p-6 text-right pr-12">
+                    <button 
+                      onClick={() => handleCheckIn(a.id)} 
+                      className={`px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all ${
+                        a.hasCheckedIn 
+                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                          : 'bg-[#f89c1d] text-white hover:bg-purple-600 shadow-lg shadow-orange-500/10'
+                      }`}
+                    >
+                      {a.hasCheckedIn ? 'Verified ✓' : 'Verify Entry'}
+                    </button>
                   </td>
                 </tr>
               )) : (
                 <tr>
-                  <td colSpan={dynamicColumns.length + 2} className="p-24 text-center">
-                    <p className="text-slate-400 font-bold italic text-sm">No {activeTab} registrations found.</p>
+                  <td colSpan={4} className="p-32 text-center">
+                    <p className="text-white/20 font-black italic text-sm tracking-widest">NO RECORDS FOUND IN ENCRYPTED CACHE</p>
                   </td>
                 </tr>
               )}
@@ -138,14 +120,19 @@ const AdminDashboard = () => {
   );
 };
 
-const StatCard = ({ title, value, icon, color }) => (
-  <div className="p-6 rounded-3xl border border-slate-100 bg-white shadow-lg flex items-center gap-4">
-    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl bg-${color}-50 text-${color}-600 shadow-inner`}>{icon}</div>
-    <div>
-      <p className="text-[9px] font-black text-slate-400 uppercase mb-1">{title}</p>
-      <p className="text-xl font-black text-slate-900">{value}</p>
+const StatCard = ({ title, value, color }) => {
+  const colors = {
+    purple: 'border-purple-500/20 bg-purple-500/5 text-purple-400',
+    emerald: 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400',
+    blue: 'border-blue-500/20 bg-blue-500/5 text-blue-400',
+    amber: 'border-amber-500/20 bg-amber-500/5 text-amber-400',
+  };
+  return (
+    <div className={`p-6 rounded-[2rem] border ${colors[color]} backdrop-blur-md`}>
+      <p className="text-[8px] font-black uppercase tracking-[0.4em] mb-2 opacity-60">{title}</p>
+      <p className="text-3xl font-black tracking-tighter text-white">{value}</p>
     </div>
-  </div>
-);
+  );
+};
 
 export default AdminDashboard;

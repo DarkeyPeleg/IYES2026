@@ -1,79 +1,124 @@
 import React, { useState } from 'react';
 import { DataService } from '../services/DataService';
 
-const GroupForm = ({ config }) => {
-  const [formData, setFormData] = useState({});
+const GroupForm = () => {
+  const [formData, setFormData] = useState({
+    firstname: '', 
+    lastname: '', 
+    email: '', 
+    phone: '', 
+    residence: '', 
+    firstTime: false
+  });
   const [status, setStatus] = useState('');
 
-  // THE FIX: Changed to 'async' to match the DataService update
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!config.groupFields || config.groupFields.length === 0) {
-      setStatus('Error: No fields set up.');
-      return;
-    }
-
     const result = await DataService.registerGroup(formData);
+    
     if (result.success) {
-      setStatus(config.successMsg || 'Success!');
-      // THE FIX: Clears internal state
-      setFormData({});
-      // THE FIX: Resets physical HTML inputs
-      e.target.reset();
+      setStatus('Organization Registered Successfully!');
+      setFormData({ 
+        firstname: '', lastname: '', email: '', phone: '', residence: '', firstTime: false 
+      });
+      setTimeout(() => setStatus(''), 5000);
     } else {
-      setStatus(result.message);
+      setStatus(result.message || 'Registration failed');
     }
   };
 
-  const inputCls = "w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white outline-none transition-all duration-300 text-sm font-semibold text-slate-700 shadow-sm";
+  // PREMIUM OBSIDIAN INPUT STYLING
+  const inputCls = "w-full p-4 bg-white/5 border border-white/10 rounded-xl outline-none transition-all duration-300 text-sm font-semibold text-white placeholder:text-white/20 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-5">
-        {config.groupFields && config.groupFields.length > 0 ? (
-          config.groupFields.map((field) => (
-            <div key={field.id} className="group animate-in fade-in slide-in-from-bottom-2 duration-500">
-              <label className="block text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 ml-1 group-focus-within:text-indigo-600 transition-colors">
-                {field.label} {field.isRequired === "1" && <span className="text-rose-500">*</span>}
-              </label>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        
+        {/* Representative Info */}
+        <div>
+          <label className="block text-[9px] font-black text-white/40 uppercase tracking-[0.2em] mb-2 ml-1">Rep. First Name</label>
+          <input 
+            className={inputCls} 
+            value={formData.firstname} 
+            onChange={e => setFormData({...formData, firstname: e.target.value})} 
+            required 
+          />
+        </div>
 
-              {field.field_type === 'select' ? (
-                <select 
-                  className={inputCls} 
-                  // THE FIX: Ties UI value to state so it can reset
-                  value={formData[field.label] || ""}
-                  required={field.isRequired === "1"} 
-                  onChange={e => setFormData({...formData, [field.label]: e.target.value})}
-                >
-                  <option value="">Select Option</option>
-                  {field.fieldOptions?.map((opt, index) => (
-                    <option key={index} value={opt.option_value}>{opt.label}</option>
-                  ))}
-                </select>
-              ) : (
-                <input 
-                  type={field.field_type || 'text'}
-                  className={inputCls} 
-                  placeholder={field.label} 
-                  // THE FIX: Ties UI value to state so it can reset
-                  value={formData[field.label] || ""}
-                  required={field.isRequired === "1"} 
-                  onChange={e => setFormData({...formData, [field.label]: e.target.value})} 
-                />
-              )}
-            </div>
-          ))
-        ) : null}
+        <div>
+          <label className="block text-[9px] font-black text-white/40 uppercase tracking-[0.2em] mb-2 ml-1">Rep. Last Name</label>
+          <input 
+            className={inputCls} 
+            value={formData.lastname} 
+            onChange={e => setFormData({...formData, lastname: e.target.value})} 
+            required 
+          />
+        </div>
+
+        {/* Contact Info */}
+        <div>
+          <label className="block text-[9px] font-black text-white/40 uppercase tracking-[0.2em] mb-2 ml-1">Org. Email</label>
+          <input 
+            type="email" 
+            className={inputCls} 
+            value={formData.email} 
+            onChange={e => setFormData({...formData, email: e.target.value})} 
+            required 
+          />
+        </div>
+
+        <div>
+          <label className="block text-[9px] font-black text-white/40 uppercase tracking-[0.2em] mb-2 ml-1">Contact Phone</label>
+          <input 
+            className={inputCls} 
+            value={formData.phone} 
+            onChange={e => setFormData({...formData, phone: e.target.value})} 
+            required 
+          />
+        </div>
+
+        {/* Location Info */}
+        <div className="md:col-span-2">
+          <label className="block text-[9px] font-black text-white/40 uppercase tracking-[0.2em] mb-2 ml-1">Organization Location</label>
+          <input 
+            className={inputCls} 
+            value={formData.residence} 
+            onChange={e => setFormData({...formData, residence: e.target.value})} 
+            required 
+          />
+        </div>
+
+        {/* First Time Check */}
+        <div className="md:col-span-2 flex items-center gap-3 p-4 bg-white/5 rounded-xl border border-white/10 transition-all hover:bg-white/10">
+          <input 
+            type="checkbox" 
+            id="groupFirstTime"
+            checked={formData.firstTime} 
+            onChange={e => setFormData({...formData, firstTime: e.target.checked})}
+            className="w-5 h-5 accent-purple-600 cursor-pointer rounded border-white/20 bg-transparent"
+          />
+          <label htmlFor="groupFirstTime" className="text-[10px] font-black text-white/60 uppercase tracking-widest cursor-pointer">
+            Is this organization's first time?
+          </label>
+        </div>
+
       </div>
 
-      <div className="pt-2">
-        <button className="w-full bg-slate-900 hover:bg-indigo-600 text-white font-black py-5 rounded-2xl shadow-xl shadow-indigo-100 hover:shadow-indigo-500/30 transition-all duration-500 text-[10px] uppercase tracking-[0.3em] active:scale-[0.98]">
+      {/* THE GLOWING BUTTON SECTION */}
+      <div className="pt-4 relative group">
+        {/* Animated Outer Glow */}
+        <div className="absolute -inset-1 bg-gradient-to-r from-[#f89c1d] to-purple-600 rounded-2xl blur-md opacity-25 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
+        
+        <button className="relative w-full bg-[#f89c1d] hover:bg-purple-700 text-white font-black py-5 rounded-2xl transition-all duration-500 text-[10px] uppercase tracking-[0.3em] active:scale-[0.98] shadow-2xl overflow-hidden">
+          {/* Subtle Shine Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+          
           Register Organization
         </button>
       </div>
 
       {status && (
-        <div className={`mt-4 p-3 rounded-xl text-center font-bold text-[10px] animate-in zoom-in-95 ${status.includes('Error') ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`}>
+        <div className={`mt-4 p-3 rounded-xl text-center font-black text-[10px] uppercase tracking-widest animate-in zoom-in-95 ${status.includes('failed') ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}`}>
           {status}
         </div>
       )}
