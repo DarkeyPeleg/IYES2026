@@ -5,31 +5,43 @@ const AttendeeForm = () => {
   const [formData, setFormData] = useState({
     firstname: '', lastname: '', email: '', phone: '', residence: '', firstTime: false
   });
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState({ type: '', msg: '' });
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const result = await DataService.register(formData);
-    if (result.success) {
-      setStatus('Registration Successful!');
-      setFormData({ firstname: '', lastname: '', email: '', phone: '', residence: '', firstTime: false });
-      setTimeout(() => setStatus(''), 5000); // Clear status after 5s
+    setLoading(true);
+    setStatus({ type: '', msg: '' });
+
+    try {
+      const result = await DataService.register(formData);
+      
+      if (result.success) {
+        setStatus({ type: 'success', msg: 'Registration Successful!' });
+        setFormData({ firstname: '', lastname: '', email: '', phone: '', residence: '', firstTime: false });
+        setTimeout(() => setStatus({ type: '', msg: '' }), 5000);
+      } else {
+        setStatus({ type: 'error', msg: result.message || 'Registration failed. Try again.' });
+      }
+    } catch (err) {
+      setStatus({ type: 'error', msg: 'Network error. Check your connection.' });
+    } finally {
+      setLoading(false);
     }
   };
 
-  // PREMIUM DARK INPUTS: Matches the Obsidian theme of Registration.js
-  const inputCls = "w-full p-4 bg-white/5 border border-white/10 rounded-xl outline-none transition-all duration-300 text-sm font-semibold text-white placeholder:text-white/20 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10";
+  const inputCls = "w-full p-4 bg-white/5 border border-white/10 rounded-xl outline-none transition-all duration-300 text-sm font-semibold text-white placeholder:text-white/20 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 disabled:opacity-50";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <input placeholder="First Name" className={inputCls} value={formData.firstname} onChange={e => setFormData({...formData, firstname: e.target.value})} required />
-        <input placeholder="Last Name" className={inputCls} value={formData.lastname} onChange={e => setFormData({...formData, lastname: e.target.value})} required />
-        <input placeholder="Email" type="email" className={inputCls} value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required />
-        <input placeholder="Phone" className={inputCls} value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} required />
+        <input placeholder="First Name" className={inputCls} value={formData.firstname} onChange={e => setFormData({...formData, firstname: e.target.value})} required disabled={loading} />
+        <input placeholder="Last Name" className={inputCls} value={formData.lastname} onChange={e => setFormData({...formData, lastname: e.target.value})} required disabled={loading} />
+        <input placeholder="Email" type="email" className={inputCls} value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required disabled={loading} />
+        <input placeholder="Phone" className={inputCls} value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} required disabled={loading} />
         
         <div className="md:col-span-2">
-          <input placeholder="Residence (e.g. Legon, Accra)" className={inputCls} value={formData.residence} onChange={e => setFormData({...formData, residence: e.target.value})} required />
+          <input placeholder="Residence (e.g. Legon, Accra)" className={inputCls} value={formData.residence} onChange={e => setFormData({...formData, residence: e.target.value})} required disabled={loading} />
         </div>
 
         <div className="md:col-span-2 flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-xl">
@@ -38,28 +50,30 @@ const AttendeeForm = () => {
             id="ft"
             checked={formData.firstTime} 
             onChange={e => setFormData({...formData, firstTime: e.target.checked})} 
-            className="w-5 h-5 accent-purple-600 rounded border-white/20 bg-transparent" 
+            className="w-5 h-5 accent-purple-600 rounded border-white/20 bg-transparent"
+            disabled={loading}
           />
           <label htmlFor="ft" className="text-[10px] font-black uppercase tracking-widest text-white/60">First time at IYES?</label>
         </div>
       </div>
       
-      {/* THE GLOWING BUTTON SECTION */}
       <div className="pt-4 relative group">
-        {/* Animated Glow Layer (Behind Button) */}
-        <div className="absolute -inset-1 bg-gradient-to-r from-[#f89c1d] to-purple-600 rounded-2xl blur-md opacity-25 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
+        <div className={`absolute -inset-1 bg-gradient-to-r from-[#f89c1d] to-purple-600 rounded-2xl blur-md transition duration-1000 ${loading ? 'opacity-10' : 'opacity-25 group-hover:opacity-100'}`}></div>
         
-        <button className="relative w-full bg-[#f89c1d] hover:bg-purple-700 text-white font-black py-5 rounded-2xl transition-all duration-500 text-[10px] uppercase tracking-[0.3em] active:scale-[0.98] shadow-2xl overflow-hidden">
-          {/* Subtle shine effect on the button */}
+        <button 
+          disabled={loading}
+          className="relative w-full bg-[#f89c1d] hover:bg-purple-700 disabled:bg-slate-800 disabled:text-slate-500 text-white font-black py-5 rounded-2xl transition-all duration-500 text-[10px] uppercase tracking-[0.3em] active:scale-[0.98] shadow-2xl overflow-hidden"
+        >
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-          
-          Confirm Registration
+          {loading ? 'Transmitting...' : 'Confirm Registration'}
         </button>
       </div>
 
-      {status && (
-        <div className="mt-4 p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-center font-black rounded-xl text-[10px] uppercase tracking-widest animate-pulse">
-          {status}
+      {status.msg && (
+        <div className={`mt-4 p-3 border rounded-xl text-center font-black text-[10px] uppercase tracking-widest animate-pulse ${
+          status.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+        }`}>
+          {status.msg}
         </div>
       )}
     </form>

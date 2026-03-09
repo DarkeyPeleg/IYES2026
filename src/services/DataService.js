@@ -1,58 +1,103 @@
-const STORAGE_KEY = 'event_attendees';
-const CONFIG_KEY = 'event_config';
+/**
+  PRODUCTION DATA SERVICE
+ * Target: https://plusureventsbackend.vercel.app
+ */
+
+const API_BASE_URL = 'https://plusureventsbackend.vercel.app';
+const AUTH_COOKIE_NAME = 'auth_token';
 
 export const DataService = {
-  // 1. ANALYTICS
-  getAll: () => {
-    const data = localStorage.getItem(STORAGE_KEY);
-    const list = data ? JSON.parse(data) : [];
-    return {
-      total: list.length,
-      checkedIn: list.filter(a => a.hasCheckedIn).length,
-      attendees: list 
-    };
-  },
-
-  getStats: () => DataService.getAll(),
-
-  // 2. REGISTRATION (Static Keys: firstname, lastname, email, phone, residence, firstTime)
-  register: async (formData) => {
-    const { attendees } = DataService.getAll();
-    const record = { 
-      ...formData, 
-      id: Date.now(), 
-      hasCheckedIn: false, 
-      isGroup: false,
-      registeredAt: new Date().toISOString()
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify([...attendees, record]));
-    return { success: true, data: record };
-  },
-
-  registerGroup: async (formData) => {
-    const { attendees } = DataService.getAll();
-    const record = { 
-      ...formData, 
-      id: 'GRP-' + Date.now(), 
-      hasCheckedIn: false, 
-      isGroup: true,
-      registeredAt: new Date().toISOString()
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify([...attendees, record]));
-    return { success: true, data: record };
-  },
-
-  // 3. UTILITIES
-  getConfig: () => JSON.parse(localStorage.getItem(CONFIG_KEY)) || { name: 'IYES 2026' },
   
-  getUserProfile: () => ({ name: 'Peleg Teye Darkey' }),
+  // 1. SECURITY & SESSION MANAGEMENT
+  getAuthToken: () => {
+    const name = AUTH_COOKIE_NAME + "=";
+    const decodedCookie = decodeURIComponent(document.cookie);
+    const ca = decodedCookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+      let c = ca[i].trim();
+      if (c.indexOf(name) === 0) return c.substring(name.length, c.length);
+    }
+    return "";
+  },
 
-  checkIn: (phone) => {
-    const { attendees } = DataService.getAll();
-    const index = attendees.findIndex(a => a.phone === phone);
-    if (index === -1) return { success: false };
-    attendees[index].hasCheckedIn = true;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(attendees));
-    return { success: true };
-  }
+  setAuthToken: (token) => {
+    const expires = new Date(Date.now() + 7 * 864e5).toUTCString();
+    document.cookie = `${AUTH_COOKIE_NAME}=${token}; expires=${expires}; path=/; SameSite=Lax; Secure`;
+  },
+
+  // 2. LIVE REGISTRATION (ORGANIZATION)
+  // Schema: name, address, contact_person_name, contact_person_phone, contact_person_email, number_heads
+  registerGroup: async (groupData) => {
+    const token = DataService.getAuthToken();
+    
+    const response = await fetch(`${API_BASE_URL}/api/register-group`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}` 
+      },
+      body: JSON.stringify({
+        ...groupData,
+        number_heads: parseInt(groupData.number_heads, 10) || 0 // Ensures integer type
+      }),
+    });
+
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message || 'Backend rejected the group registration');
+    
+    return { success: true, data: result };
+  },
+
+  // 3. LIVE REGISTRATION (INDIVIDUAL)
+  register: async (formData) => {
+    const token = DataService.getAuthToken();
+    
+    const response = await fetch(`${API_BASE_URL}/api/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(formData),
+    });
+
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message || 'Individual registration failed');
+    
+    return { success: true, data: result };
+  },
+
+  // 4. LIVE DASHBOARD ANALYTICS
+  getStats: async () => {
+    const token = DataService.getAuthToken();
+    
+    const response = await fetch(`${API_BASE_URL}/api/attendees`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (!response.ok) throw new Error('Unauthorized access to analytics');
+    
+    const data = await response.json();
+    
+    return {
+      total: data.length || 0,
+      checkedIn: data.filter(a => a.hasCheckedIn === 1 || a.hasCheckedIn === true).length,
+      attendees: data // Live data array from Vercel
+    };
+  },
+
+  // 5. LIVE GATE CHECK-IN (UPSA AUDITORIUM)
+  checkIn: async (attendeeId) => {
+    const token = DataService.getAuthToken();
+    
+    const response = await fetch(`${API_BASE_URL}/api/checkin/${attendeeId}`, {
+      method: 'PATCH',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (!response.ok) throw new Error('Check-in failed at the server level');
+    return true;
+  },
+
+  getUserProfile: () => ({ name: 'Peleg Teye Darkey' })
 };
