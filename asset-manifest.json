@@ -1,16 +1,16 @@
 {
   "files": {
     "main.css": "/IYES2026/static/css/main.378c86fa.css",
-    "main.js": "/IYES2026/static/js/main.1b433a1b.js",
+    "main.js": "/IYES2026/static/js/main.05ebff1c.js",
     "static/js/453.a0985898.chunk.js": "/IYES2026/static/js/453.a0985898.chunk.js",
     "static/media/flyer.jpeg": "/IYES2026/static/media/flyer.d2f095416117e1c0aafb.jpeg",
     "index.html": "/IYES2026/index.html",
     "main.378c86fa.css.map": "/IYES2026/static/css/main.378c86fa.css.map",
-    "main.1b433a1b.js.map": "/IYES2026/static/js/main.1b433a1b.js.map",
+    "main.05ebff1c.js.map": "/IYES2026/static/js/main.05ebff1c.js.map",
     "453.a0985898.chunk.js.map": "/IYES2026/static/js/453.a0985898.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.378c86fa.css",
-    "static/js/main.1b433a1b.js"
+    "static/js/main.05ebff1c.js"
   ]
 }
