@@ -1,5 +1,6 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from "react-router-dom";
+// SWITCHED BrowserRouter TO HashRouter
+import { HashRouter as Router, Routes, Route, Link, useLocation, Navigate } from "react-router-dom";
 import { DataService } from './services/DataService'; 
 import Registration from "./pages/Registration";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -10,13 +11,12 @@ const Navigation = () => {
   const location = useLocation();
   const admin = DataService.getUserProfile();
 
-  // HIDE NAV ON REGISTRATION PAGE
+  // In HashRouter, the root is still "/"
   if (location.pathname === "/") return null;
 
   return (
     <nav className="sticky top-0 z-50 bg-[#1a0b2e] border-b border-white/5 shadow-2xl px-6 py-4">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
-        {/* Branding */}
         <Link to="/" className="flex items-center gap-3">
           <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-inner">
             <div className="w-5 h-5 bg-[#f89c1d] rounded-md"></div>
@@ -26,7 +26,6 @@ const Navigation = () => {
           </span>
         </Link>
 
-        {/* Links */}
         <div className="flex items-center gap-6">
           <div className="hidden md:flex items-center gap-2 bg-purple-900/40 p-1.5 rounded-2xl border border-white/10">
             <Link to="/" className="px-5 py-2 rounded-xl text-[10px] font-black uppercase text-purple-100 hover:text-white">Portal</Link>
@@ -60,7 +59,6 @@ function App() {
           </Routes>
         </main>
 
-        {/* Footer only on internal pages */}
         <FooterController />
       </div>
     </Router>

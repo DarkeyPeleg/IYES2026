@@ -1,101 +1,70 @@
 /**
-  PRODUCTION DATA SERVICE
+ * PRODUCTION DATA SERVICE - v1 UPDATED
  * Target: https://plusureventsbackend.vercel.app
  */
 
 const API_BASE_URL = 'https://plusureventsbackend.vercel.app';
-const AUTH_COOKIE_NAME = 'auth_token';
 
 export const DataService = {
   
-  // 1. SECURITY & SESSION MANAGEMENT
-  getAuthToken: () => {
-    const name = AUTH_COOKIE_NAME + "=";
-    const decodedCookie = decodeURIComponent(document.cookie);
-    const ca = decodedCookie.split(';');
-    for (let i = 0; i < ca.length; i++) {
-      let c = ca[i].trim();
-      if (c.indexOf(name) === 0) return c.substring(name.length, c.length);
-    }
-    return "";
-  },
+  getAuthToken: () => "",
+  setAuthToken: (token) => { console.log("Token not required.") },
 
-  setAuthToken: (token) => {
-    const expires = new Date(Date.now() + 7 * 864e5).toUTCString();
-    document.cookie = `${AUTH_COOKIE_NAME}=${token}; expires=${expires}; path=/; SameSite=Lax; Secure`;
-  },
-
-  // 2. LIVE REGISTRATION (ORGANIZATION)
-  // Schema: name, address, contact_person_name, contact_person_phone, contact_person_email, number_heads
-  registerGroup: async (groupData) => {
-    const token = DataService.getAuthToken();
-    
-    const response = await fetch(`${API_BASE_URL}/api/register-group`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}` 
-      },
-      body: JSON.stringify({
-        ...groupData,
-        number_heads: parseInt(groupData.number_heads, 10) || 0 // Ensures integer type
-      }),
-    });
-
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.message || 'Backend rejected the group registration');
-    
-    return { success: true, data: result };
-  },
-
-  // 3. LIVE REGISTRATION (INDIVIDUAL)
+  // 1. UPDATED INDIVIDUAL REGISTRATION
+  // New Endpoint: /api/v1/attendee/register
   register: async (formData) => {
-    const token = DataService.getAuthToken();
-    
-    const response = await fetch(`${API_BASE_URL}/api/register`, {
+    const response = await fetch(`${API_BASE_URL}/api/v1/attendee/register`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(formData),
     });
 
     const result = await response.json();
     if (!response.ok) throw new Error(result.message || 'Individual registration failed');
-    
     return { success: true, data: result };
   },
 
-  // 4. LIVE DASHBOARD ANALYTICS
-  getStats: async () => {
-    const token = DataService.getAuthToken();
-    
-    const response = await fetch(`${API_BASE_URL}/api/attendees`, {
-      headers: { 'Authorization': `Bearer ${token}` }
+  // 2. UPDATED GROUP REGISTRATION
+  // Following the same v1 pattern
+  registerGroup: async (groupData) => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/attendee/register-group`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...groupData,
+        number_heads: parseInt(groupData.number_heads, 10) || 0 
+      }),
     });
 
-    if (!response.ok) throw new Error('Unauthorized access to analytics');
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message || 'Group registration failed');
+    return { success: true, data: result };
+  },
+
+  // 3. UPDATED DASHBOARD ANALYTICS
+  // Check with De Graft if this is /api/v1/attendee/all or similar
+  getStats: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/attendee/all`);
+
+    if (!response.ok) throw new Error('Could not fetch analytics');
     
     const data = await response.json();
+    const rawList = data.event_attendees || [];
     
     return {
-      total: data.length || 0,
-      checkedIn: data.filter(a => a.hasCheckedIn === 1 || a.hasCheckedIn === true).length,
-      attendees: data // Live data array from Vercel
+      total: rawList.length,
+      checkedIn: rawList.filter(a => a.hasCheckedIn === true || a.hasCheckedIn === 1).length,
+      attendees: rawList 
     };
   },
 
-  // 5. LIVE GATE CHECK-IN (UPSA AUDITORIUM)
+  // 4. UPDATED GATE CHECK-IN
   checkIn: async (attendeeId) => {
-    const token = DataService.getAuthToken();
-    
-    const response = await fetch(`${API_BASE_URL}/api/checkin/${attendeeId}`, {
-      method: 'PATCH',
-      headers: { 'Authorization': `Bearer ${token}` }
+    const response = await fetch(`${API_BASE_URL}/api/v1/attendee/checkin/${attendeeId}`, {
+      method: 'PATCH'
     });
 
-    if (!response.ok) throw new Error('Check-in failed at the server level');
+    if (!response.ok) throw new Error('Check-in failed');
     return true;
   },
 
