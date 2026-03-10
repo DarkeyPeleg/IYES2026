@@ -1,5 +1,5 @@
 /**
- * PRODUCTION DATA SERVICE - v1 UPDATED
+ * PRODUCTION DATA SERVICE - v1 FINAL
  * Target: https://plusureventsbackend.vercel.app
  */
 
@@ -8,10 +8,9 @@ const API_BASE_URL = 'https://plusureventsbackend.vercel.app';
 export const DataService = {
   
   getAuthToken: () => "",
-  setAuthToken: (token) => { console.log("Token not required.") },
+  setAuthToken: (token) => { console.log("Auth managed by backend.") },
 
-  // 1. UPDATED INDIVIDUAL REGISTRATION
-  // New Endpoint: /api/v1/attendee/register
+  // 1. INDIVIDUAL REGISTRATION
   register: async (formData) => {
     const response = await fetch(`${API_BASE_URL}/api/v1/attendee/register`, {
       method: 'POST',
@@ -20,20 +19,16 @@ export const DataService = {
     });
 
     const result = await response.json();
-    if (!response.ok) throw new Error(result.message || 'Individual registration failed');
+    if (!response.ok) throw new Error(result.message || 'Registration failed');
     return { success: true, data: result };
   },
 
-  // 2. UPDATED GROUP REGISTRATION
-  // Following the same v1 pattern
-  registerGroup: async (groupData) => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/attendee/register-group`, {
+  // 2. GROUP REGISTRATION
+  registerGroup: async (payload) => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/attendee-group/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...groupData,
-        number_heads: parseInt(groupData.number_heads, 10) || 0 
-      }),
+      body: JSON.stringify(payload),
     });
 
     const result = await response.json();
@@ -41,27 +36,59 @@ export const DataService = {
     return { success: true, data: result };
   },
 
-  // 3. UPDATED DASHBOARD ANALYTICS
-  // Check with De Graft if this is /api/v1/attendee/all or similar
-  getStats: async () => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/attendee/all`);
+  // 3. ANALYTICS (Fixed for Triple-Nested Data)
+ getStats: async () => {
+    let individuals = [];
+    let groups = [];
 
-    if (!response.ok) throw new Error('Could not fetch analytics');
+    // 1. Fetch Individuals
+    try {
+      const indivRes = await fetch(`${API_BASE_URL}/api/v1/attendee`);
+      const indivJson = await indivRes.json();
+      const rawIndivs = indivJson.data?.data || indivJson.data || [];
+      
+      individuals = Array.isArray(rawIndivs) ? rawIndivs.map(a => ({
+        ...a,
+        id: a.id,
+        name: a.name || `${a.firstname || ''} ${a.lastname || ''}`.trim() || "Individual",
+        residence: a.address || a.residence || "N/A",
+        isGroup: false // Force false for this endpoint
+      })) : [];
+    } catch (e) { console.error("Indiv Error"); }
+
+    // 2. Fetch Groups
+    try {
+      const groupRes = await fetch(`${API_BASE_URL}/api/v1/attendee-group`);
+      // If De Graft's server is still returning that text "This action returns...", 
+      // this fetch will fail or return an error, which is why it's empty.
+      if (groupRes.ok && groupRes.headers.get("content-type")?.includes("application/json")) {
+        const groupJson = await groupRes.json();
+        const rawGroups = groupJson.data?.data || groupJson.data || groupJson.attendeeGroups || [];
+        
+        groups = Array.isArray(rawGroups) ? rawGroups.map(g => ({
+          ...g,
+          id: g.id,
+          name: g.name || g.name_of_org || "Organization",
+          residence: g.address || g.residence || "N/A",
+          isGroup: true // FORCE TRUE SO THE DASHBOARD TAB SEES IT
+        })) : [];
+      }
+    } catch (e) { console.error("Group Error"); }
     
-    const data = await response.json();
-    const rawList = data.event_attendees || [];
-    
+    const combined = [...individuals, ...groups];
     return {
-      total: rawList.length,
-      checkedIn: rawList.filter(a => a.hasCheckedIn === true || a.hasCheckedIn === 1).length,
-      attendees: rawList 
+      total: combined.length,
+      checkedIn: combined.filter(a => a.hasCheckedIn).length,
+      attendees: combined 
     };
   },
 
-  // 4. UPDATED GATE CHECK-IN
-  checkIn: async (attendeeId) => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/attendee/checkin/${attendeeId}`, {
-      method: 'PATCH'
+  // 4. GATE CHECK-IN
+  checkIn: async (id, isGroup = false) => {
+    const endpoint = isGroup ? `attendee-group` : `attendee`;
+    const response = await fetch(`${API_BASE_URL}/api/v1/${endpoint}/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' }
     });
 
     if (!response.ok) throw new Error('Check-in failed');

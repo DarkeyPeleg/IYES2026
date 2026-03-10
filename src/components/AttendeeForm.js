@@ -2,9 +2,16 @@ import React, { useState } from 'react';
 import { DataService } from '../services/DataService';
 
 const AttendeeForm = () => {
+  // We keep the keys exactly as the server wants them: lowercase 'n'
   const [formData, setFormData] = useState({
-    firstname: '', lastname: '', email: '', phone: '', residence: '', firstTime: false
+    firstname: '', 
+    lastname: '', 
+    email: '', 
+    phone: '', 
+    residence: '', 
+    firstTime: false
   });
+  
   const [status, setStatus] = useState({ type: '', msg: '' });
   const [loading, setLoading] = useState(false);
 
@@ -14,17 +21,21 @@ const AttendeeForm = () => {
     setStatus({ type: '', msg: '' });
 
     try {
+      // Send the formData directly as you did when it was working
       const result = await DataService.register(formData);
       
       if (result.success) {
         setStatus({ type: 'success', msg: 'Registration Successful!' });
+        // Reset form
         setFormData({ firstname: '', lastname: '', email: '', phone: '', residence: '', firstTime: false });
         setTimeout(() => setStatus({ type: '', msg: '' }), 5000);
       } else {
-        setStatus({ type: 'error', msg: result.message || 'Registration failed. Try again.' });
+        setStatus({ type: 'error', msg: result.message || 'Registration failed.' });
       }
     } catch (err) {
-      setStatus({ type: 'error', msg: 'Network error. Check your connection.' });
+      // If this triggers, the server is rejecting the request with a 500
+      setStatus({ type: 'error', msg: 'Server error. De Graft is updating the API.' });
+      console.error("Submission Error:", err);
     } finally {
       setLoading(false);
     }
@@ -35,13 +46,49 @@ const AttendeeForm = () => {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <input placeholder="First Name" className={inputCls} value={formData.firstname} onChange={e => setFormData({...formData, firstname: e.target.value})} required disabled={loading} />
-        <input placeholder="Last Name" className={inputCls} value={formData.lastname} onChange={e => setFormData({...formData, lastname: e.target.value})} required disabled={loading} />
-        <input placeholder="Email" type="email" className={inputCls} value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required disabled={loading} />
-        <input placeholder="Phone" className={inputCls} value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} required disabled={loading} />
+        <input 
+          placeholder="First Name" 
+          className={inputCls} 
+          value={formData.firstname} 
+          onChange={e => setFormData({...formData, firstname: e.target.value})} 
+          required 
+          disabled={loading} 
+        />
+        <input 
+          placeholder="Last Name" 
+          className={inputCls} 
+          value={formData.lastname} 
+          onChange={e => setFormData({...formData, lastname: e.target.value})} 
+          required 
+          disabled={loading} 
+        />
+        <input 
+          placeholder="Email" 
+          type="email" 
+          className={inputCls} 
+          value={formData.email} 
+          onChange={e => setFormData({...formData, email: e.target.value})} 
+          required 
+          disabled={loading} 
+        />
+        <input 
+          placeholder="Phone" 
+          className={inputCls} 
+          value={formData.phone} 
+          onChange={e => setFormData({...formData, phone: e.target.value})} 
+          required 
+          disabled={loading} 
+        />
         
         <div className="md:col-span-2">
-          <input placeholder="Residence (e.g. Legon, Accra)" className={inputCls} value={formData.residence} onChange={e => setFormData({...formData, residence: e.target.value})} required disabled={loading} />
+          <input 
+            placeholder="Residence (e.g. Legon, Accra)" 
+            className={inputCls} 
+            value={formData.residence} 
+            onChange={e => setFormData({...formData, residence: e.target.value})} 
+            required 
+            disabled={loading} 
+          />
         </div>
 
         <div className="md:col-span-2 flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-xl">
@@ -64,13 +111,12 @@ const AttendeeForm = () => {
           disabled={loading}
           className="relative w-full bg-[#f89c1d] hover:bg-purple-700 disabled:bg-slate-800 disabled:text-slate-500 text-white font-black py-5 rounded-2xl transition-all duration-500 text-[10px] uppercase tracking-[0.3em] active:scale-[0.98] shadow-2xl overflow-hidden"
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
           {loading ? 'Transmitting...' : 'Confirm Registration'}
         </button>
       </div>
 
       {status.msg && (
-        <div className={`mt-4 p-3 border rounded-xl text-center font-black text-[10px] uppercase tracking-widest animate-pulse ${
+        <div className={`mt-4 p-3 border rounded-xl text-center font-black text-[10px] uppercase tracking-widest ${
           status.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
         }`}>
           {status.msg}

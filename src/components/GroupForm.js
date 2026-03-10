@@ -2,16 +2,16 @@ import React, { useState } from 'react';
 import { DataService } from '../services/DataService';
 
 const GroupForm = () => {
+  // We keep your UI state names the same, but map them in handleSubmit
   const [formData, setFormData] = useState({
-    name: '',                
-    address: '',             
+    name_of_org: '',          
+    residence: '',            
     contact_person_name: '',  
     contact_person_phone: '', 
     contact_person_email: '', 
     number_heads: ''         
   });
   
-  // Changed to object for specialized styling
   const [status, setStatus] = useState({ type: '', msg: '' });
   const [loading, setLoading] = useState(false);
 
@@ -20,19 +20,32 @@ const GroupForm = () => {
     setLoading(true);
     setStatus({ type: '', msg: '' });
     
+    // MAPPING: Convert UI keys to Backend keys (name and address)
+    // This fixes the "name must be a string" error from your screenshot
+    const payload = {
+      name: formData.name_of_org.trim(),
+      address: formData.residence.trim(),
+      contact_person_name: formData.contact_person_name.trim(),
+      contact_person_phone: formData.contact_person_phone.trim(),
+      contact_person_email: formData.contact_person_email.trim(),
+      number_heads: parseInt(formData.number_heads, 10) || 0
+    };
+
     try {
-      const result = await DataService.registerGroup(formData);
+      const result = await DataService.registerGroup(payload);
       
       if (result.success) {
         setStatus({ type: 'success', msg: 'Organization Registered Successfully!' });
-        setFormData({ name: '', address: '', contact_person_name: '', contact_person_phone: '', contact_person_email: '', number_heads: '' });
+        // Clear form on success
+        setFormData({ name_of_org: '', residence: '', contact_person_name: '', contact_person_phone: '', contact_person_email: '', number_heads: '' });
         setTimeout(() => setStatus({ type: '', msg: '' }), 5000);
       } else {
-        // Capture specific error message from De Graft's backend
-        setStatus({ type: 'error', msg: result.message || 'Submission Error. Please try again.' });
+        setStatus({ type: 'error', msg: result.message || 'Submission Error.' });
       }
     } catch (err) {
-      setStatus({ type: 'error', msg: 'Network failure. Please check your connection.' });
+      // Improved error message based on the 400 error we found
+      setStatus({ type: 'error', msg: 'Registration failed. Check if all fields are valid.' });
+      console.error("Submission Error Details:", err);
     } finally {
       setLoading(false);
     }
@@ -49,8 +62,8 @@ const GroupForm = () => {
           <label className="block text-[9px] font-black text-white/40 uppercase tracking-[0.2em] mb-2 ml-1">Organization / Group Name</label>
           <input 
             className={inputCls} 
-            value={formData.name} 
-            onChange={e => setFormData({...formData, name: e.target.value})} 
+            value={formData.name_of_org} 
+            onChange={e => setFormData({...formData, name_of_org: e.target.value})} 
             placeholder="e.g. UPSA Student Union"
             required 
             disabled={loading}
@@ -97,15 +110,16 @@ const GroupForm = () => {
           <label className="block text-[9px] font-black text-white/40 uppercase tracking-[0.2em] mb-2 ml-1">Address / Location</label>
           <input 
             className={inputCls} 
-            value={formData.address} 
-            onChange={e => setFormData({...formData, address: e.target.value})} 
+            value={formData.residence} 
+            onChange={e => setFormData({...formData, residence: e.target.value})} 
+            placeholder="e.g. Legon, Accra"
             required 
             disabled={loading}
           />
         </div>
 
         <div>
-          <label className="block text-[9px] font-black text-white/40 uppercase tracking-[0.2em] mb-2 ml-1">Expected Number of Heads</label>
+          <label className="block text-[9px] font-black text-white/40 uppercase tracking-[0.2em] mb-2 ml-1">Number of Heads</label>
           <input 
             type="number"
             className={inputCls} 
@@ -118,13 +132,11 @@ const GroupForm = () => {
       </div>
 
       <div className="pt-4 relative group">
-        {/* Glow effect dimming when loading */}
         <div className={`absolute -inset-1 bg-gradient-to-r from-[#f89c1d] to-purple-600 rounded-2xl blur-md transition duration-700 ${loading ? 'opacity-10' : 'opacity-25 group-hover:opacity-100'}`}></div>
         <button 
           disabled={loading}
-          className="relative w-full bg-[#f89c1d] hover:bg-purple-700 disabled:bg-slate-800 disabled:text-slate-500 text-white font-black py-5 rounded-2xl transition-all duration-500 text-[10px] uppercase tracking-[0.3em] active:scale-[0.98] shadow-2xl disabled:shadow-none overflow-hidden"
+          className="relative w-full bg-[#f89c1d] hover:bg-purple-700 disabled:bg-slate-800 disabled:text-slate-500 text-white font-black py-5 rounded-2xl transition-all duration-500 text-[10px] uppercase tracking-[0.3em] active:scale-[0.98] shadow-2xl overflow-hidden"
         >
-          {/* Shine effect animation */}
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
           {loading ? 'Transmitting Data...' : 'Confirm Organization Registration'}
         </button>
