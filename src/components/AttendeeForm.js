@@ -34,7 +34,7 @@ const AttendeeForm = () => {
       }
     } catch (err) {
       // If this triggers, the server is rejecting the request with a 500
-      setStatus({ type: 'error', msg: 'Server error. De Graft is updating the API.' });
+      setStatus({ type: 'error', msg: err.message });
       console.error("Submission Error:", err);
     } finally {
       setLoading(false);
@@ -68,7 +68,6 @@ const AttendeeForm = () => {
           className={inputCls} 
           value={formData.email} 
           onChange={e => setFormData({...formData, email: e.target.value})} 
-          required 
           disabled={loading} 
         />
         <input 

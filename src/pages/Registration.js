@@ -3,6 +3,7 @@ import { DataService } from '../services/DataService';
 import AttendeeForm from '../components/AttendeeForm';
 import GroupForm from '../components/GroupForm';
 import IYESFlyer from '../img/flyer.jpeg';
+import { Link } from 'react-router-dom';
 
 const Registration = () => {
   const [regType, setRegType] = useState('individual');
@@ -53,7 +54,7 @@ const Registration = () => {
         
         {/* Authenticated Terminal Label */}
         <div className="absolute bottom-12 left-12 z-20 flex flex-col gap-1.5">
-          <p className="text-white/40 font-black text-[9px] uppercase tracking-[0.5em] leading-none">Authenticated Terminal</p>
+          <Link to="/dashboard"> <p className="text-white/40 font-black text-[9px] uppercase tracking-[0.5em] leading-none">Authenticated Terminal</p></Link>
           <div className="h-0.5 w-12 bg-[#f89c1d] rounded-full shadow-[0_0_8px_rgba(248,156,29,0.5)]"></div>
         </div>
       </div>
