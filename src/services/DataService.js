@@ -19,7 +19,7 @@ export const DataService = {
     });
 
     const result = await response.json();
-    if (!response.ok) throw new Error(result.message || 'Registration failed');
+    if (!response.ok) throw new Error(result.error || 'Registration failed');
     return { success: true, data: result };
   },
 
